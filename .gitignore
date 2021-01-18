@@ -7,6 +7,7 @@ dist
 *.spec
 
 # Visual Studio Code workspace settings
+.vscode
 .vscode/*
 !.vscode/launch.json
 !.vscode/extensions.json

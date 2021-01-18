@@ -1,10 +1,8 @@
-import logging
+import pickle
 from dataclasses import dataclass
 from datetime import datetime
 from typing import DefaultDict, Iterable, Union
 
-
-logging.debug("cica")
 
 @dataclass(frozen=True)
 class Seed:
@@ -14,6 +12,12 @@ class Seed:
     time: list
     data: DefaultDict #Mapping[site,frequency]
 
+    def __str__(self):
+        return 'cica'
+
+    def __repr__(self):
+        return "Seed object\n.time,\n.data:"+_tree_string(self.data)
+    
     @classmethod
     def from_dict(cls, raw_iqs: dict):
         time = time=raw_iqs['data']['site0']['hf']['time']
@@ -23,14 +27,16 @@ class Seed:
                 del freq['time']
         
         return cls(time, myqs['data'])
-        pass
 
-    def __str__(self):
-        return 'cica'
-
-    def __repr__(self):
-        return "Seed object\n.time,\n.data:"+_tree_string(self.data)
-
+    @classmethod
+    def save(cls,file_name: str) -> None:
+        """Save data to file."""
+        # Make sure pickle extension is added
+        if not file_name.endswith('.pkl'): file_name += '.pkl'
+        # Write file
+        with open(file_name, 'wb') as output:
+            # -1 means that the data is dumped using the Highest protocol
+            pickle.dump(cls, output, -1)
 
 def _tree_string(data:Union[dict,DefaultDict], level=0) -> str:
     """String nested stucture overview."""
@@ -41,3 +47,11 @@ def _tree_string(data:Union[dict,DefaultDict], level=0) -> str:
             out_str = out_str + ":"
             out_str = out_str + _tree_string(value,level=level+1)
     return out_str
+
+
+def load(file_name:str) -> Seed:
+    """Load data from file."""
+    with open(file_name, 'rb') as input:
+        seed = pickle.load(input)
+
+    return seed

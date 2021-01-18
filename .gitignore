@@ -1,1 +1,13 @@
 *.iqs
+__pycache__
+*.egg-info
+build
+dist
+*.swp
+*.spec
+
+# Visual Studio Code workspace settings
+.vscode/*
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/settings.json

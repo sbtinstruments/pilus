@@ -1,0 +1,2 @@
+class BoxError(Exception):
+    pass

@@ -1,18 +1,83 @@
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=1.0.0"]
+
 [tool.poetry]
+authors = ["tvi <tvi@sbtinstruments.com>"]
+description = ""
 name = "spat"
 version = "0.1.0"
-description = ""
-authors = ["tvi <tvi@sbtinstruments.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+immutables = "^0.14"
 numpy = "^1.19"
+python = "^3.8"
 scipy = "^1.5"
+jsonschema = "^3.2.0"
+pydantic = "^1.8.1"
+pyhumps = "^1.6.1"
 
 [tool.poetry.dev-dependencies]
-pytest = "^5.2"
 black = {version = "^20.8b1", allow-prereleases = true}
+mypy = "^0.790"
+pylint = "^2.6.0"
+pytest = "^5.2"
+pyfakefs = "^4.4.0"
 
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+[tool.black]
+target-version = ['py38']
+
+[tool.isort]
+profile = 'black'
+
+[tool.pylint.master]
+# i,j,k: You can use this for an integer index in a loop.
+# fs: We use this in the tests to get a pyfakefs file system reference.
+#     Since pytest's dependency injection is name based, we have to use
+#     this exact argument name.
+# tg: You can use this for an `anyio.TaskGroup`.
+good-names = 'i,j,k,fs,tg' # Default is 'i,j,k,ex,Run,_'
+# Increase the default values a bit. Yes, this may hurt maintainability
+# ever so slightly but it increases the speed of development.
+max-args = '7' # Default is 5
+max-attributes = '12' # Default is 7
+# Match black's default max line length
+max-line-length = '88' # Default is 100
+
+[tool.pylint.similarities]
+# Imports are often duplicated. If two different files use a lot of
+# the same imports, there is just no way around it. Therefore, we
+# simply ignore import statements completely when we look for duplicate
+# code.
+ignore-imports = 'y'
+
+[tool.pylint.'messages control']
+# Note that there is an ongoing discussion about, the current
+# pylint defaults:
+#     https://github.com/PyCQA/pylint/issues/3512
+#
+# It's also interesting to note that the pylint authors disable
+# some checks for the official pylint repo:
+#     https://github.com/PyCQA/pylint/blob/master/pylintrc#L56
+
+### IF YOU ENABLE A PYLINT CHECK THEN EXPLAIN WHY BELOW
+enable = '''
+'''
+
+### IF YOU DISABLE A PYLINT CHECK THEN EXPLAIN WHY BELOW
+#
+# fixme: We use "TODO: " to note areas that we can improve.
+#     It's nice to have this directly in the code in a way that
+#     we can easily search for.
+#     Related to: https://github.com/PyCQA/pylint/issues/2874
+#
+# missing-module-docstring,
+# missing-class-docstring,
+# missing-function-docstring: pydocstyle handles all this
+#     See: https://pylint.readthedocs.io/en/latest/faq.html#i-am-using-another-popular-linter-alongside-pylint-which-messages-should-i-disable-to-avoid-duplicates
+disable = '''
+  fixme,
+  missing-module-docstring,
+  missing-class-docstring,
+  missing-function-docstring,
+'''

@@ -139,6 +139,23 @@ def _get_ihdr_b_length(iqs:dict) -> int:
     n_channels = len(iqs['IHDR'][site_names[0]].keys())
     return n_sites*(256+4+n_channels*(256 + 4 + 1 + 8 + 56))+4
 
+def _get_shdr_b_length() -> int:
+    """Return SHDR chunk byte length."""
+    return 8
+
+def _write_shdr(f, iqs:dict) -> None:
+    """Write legacy header chunk."""
+    # write chunk length
+    write_uint32(f, _get_shdr_b_length())
+    # write chunk type
+    f.write(b'SHDR')
+    # write time step
+    write_uint32(f, iqs["SHDR"]["sample_time_step"])
+    # write max amplitude (scaling)
+    write_uint32(f, iqs["SHDR"]["sample_max_signal_amplitude"])
+    # write crc
+    write_uint32(f,0)
+
 def _read_idat(f, ihdr: Union[dict, DefaultDict]):
     idat_segment = nested_dict()
     timestamp = read_uint64(f)
@@ -204,6 +221,30 @@ def _get_idat_b_length(idat:dict) -> int:
     """Compute IDAT chunk byte length."""
     # TODO: remove hard-coded site/channel/re/im names
     return ((len(idat['site0']['hf']['re']) * 4) * 4 + 8)*2
+
+def _write_sdat(f, iqs) -> None:
+    """Write SDAT chunks."""
+    for chunk in iqs['SDAT']:
+        # write chunk length
+        write_uint32(f, _get_sdat_b_length(chunk))
+        # write chunk type
+        f.write(b'SDAT')
+        # write timestamp
+        write_uint64(f, chunk['timestamp'])
+        # write data chunks
+        for values in zip(chunk["hf_re"], chunk["hf_im"], chunk["lf_re"], chunk["lf_im"]):
+            for value in values:
+                # .item() converts numpy types to native types
+                write_int32(f, value.item())
+
+        # write crc
+        write_uint32(f,0)
+
+def _get_sdat_b_length(chunk:dict) -> int:
+    """Compute SDAT chunk byte length."""
+    return ((len(chunk["hf_re"]) * 4) * 4 + 8)
+
+
 
 def _parse_iqs_channels(iqs:Union[dict,DefaultDict]):
     """Parse raw .iqs data 'IDAT' into easy-to-handle lists."""

@@ -23,10 +23,10 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
 [package.extras]
-dev = ["coverage[toml] (>=5.0.2)", "hypothesis", "pympler", "pytest (>=4.3.0)", "six", "zope.interface", "furo", "sphinx", "pre-commit"]
 docs = ["furo", "sphinx", "zope.interface"]
 tests = ["coverage[toml] (>=5.0.2)", "hypothesis", "pympler", "pytest (>=4.3.0)", "six", "zope.interface"]
 tests_no_zope = ["coverage[toml] (>=5.0.2)", "hypothesis", "pympler", "pytest (>=4.3.0)", "six"]
+dev = ["coverage[toml] (>=5.0.2)", "hypothesis", "pympler", "pytest (>=4.3.0)", "six", "zope.interface", "furo", "sphinx", "pre-commit"]
 
 [[package]]
 name = "black"
@@ -37,14 +37,14 @@ optional = false
 python-versions = ">=3.6"
 
 [package.dependencies]
-appdirs = "*"
-click = ">=7.1.2"
-mypy-extensions = ">=0.4.3"
-pathspec = ">=0.6,<1"
 regex = ">=2020.1.8"
-toml = ">=0.10.1"
+mypy-extensions = ">=0.4.3"
 typed-ast = ">=1.4.0"
+toml = ">=0.10.1"
 typing-extensions = ">=3.7.4"
+pathspec = ">=0.6,<1"
+click = ">=7.1.2"
+appdirs = "*"
 
 [package.extras]
 colorama = ["colorama (>=0.4.3)"]
@@ -54,7 +54,7 @@ d = ["aiohttp (>=3.3.2)", "aiohttp-cors"]
 name = "click"
 version = "7.1.2"
 description = "Composable command line interface toolkit"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
@@ -145,14 +145,14 @@ optional = false
 python-versions = ">=3.5"
 
 [package.dependencies]
-atomicwrites = {version = ">=1.0", markers = "sys_platform == \"win32\""}
-attrs = ">=17.4.0"
-colorama = {version = "*", markers = "sys_platform == \"win32\""}
 more-itertools = ">=4.0.0"
-packaging = "*"
-pluggy = ">=0.12,<1.0"
 py = ">=1.5.0"
 wcwidth = "*"
+packaging = "*"
+colorama = {version = "*", markers = "sys_platform == \"win32\""}
+attrs = ">=17.4.0"
+pluggy = ">=0.12,<1.0"
+atomicwrites = {version = ">=1.0", markers = "sys_platform == \"win32\""}
 
 [package.extras]
 checkqa-mypy = ["mypy (==v0.761)"]
@@ -212,7 +212,7 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "c90566bb0984570acb54903df8a65a98c3e138b9a4ca00ae3f9f1763522fc948"
+content-hash = "76af91fbd06db9f5a53636a0ee7a459b59fa991f90477f94791253d954a20756"
 
 [metadata.files]
 appdirs = [

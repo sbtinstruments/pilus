@@ -7,35 +7,43 @@ import click
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-def split_iqs_file(src : str, dest : str):
+def add_site_to_path(path: str, site: int):
+  return click.format_filename(path).strip('.iqs')+'-site'+str(site)+'.iqs'
+
+def split_iqs_file(site, src : str):
   if src.endswith(".iqs"):
+    print(f'Opening .iqs file...')
     incoming = open_iqs(src)
-    outgoing = to_IQSv1(incoming)
-    write_iqs_v1(outgoing, dest)
+    # sites: 0, 1, or both
+    sites = [site]
+    if site is None:
+      print(f'Extracting all sites')
+      sites = [0, 1]
+    for i in sites:
+      print(f'Extracting site {i}...')
+      outgoing = to_IQSv1(incoming, i)
+      write_iqs_v1(outgoing, add_site_to_path(src, i))
+  else:
+    print("Please supply a file with the .iqs extension!")
 
 @click.command()
 @click.argument('filename', type=click.Path(exists=True, resolve_path=True))
-def split_file(filename):
-  split_iqs_file(filename, dir_path + "/test3.iqs")
+@click.option('--site', type=int)
+def split_file(filename, site):
+  if site not in (None, 0, 1):
+    print("Site must be 0 or 1, if provided.")
+    return
+  split_iqs_file(site, filename)
 
 
+# def split_iqs_files(src_dir, dest_dir=None):
+#   if dest_dir is None:
+#     dest_dir = src_dir
+#   for file in os.listdir(src_dir):
+#     if file.endswith(".iqs"):
+#       split_iqs_file(os.path.join(src_dir, file), dest_dir)    
 
-def split_iqs_files(src_dir, dest_dir=None):
-  if dest_dir is None:
-    dest_dir = src_dir
-  for file in os.listdir(src_dir):
-    if file.endswith(".iqs"):
-      split_iqs_file(os.path.join(src_dir, file), dest_dir)    
 
-
-data_dir_new = "/bb2017035_new algorithms/2 µm"
-data_dir_old = "/bb2045007_old algorithms/2 µm"
 
 if __name__ == "__main__":
   split_file()
-
-#a = open_iqs(dir_path + data_dir_new + '/2um_100e5-20210203-102759-A94.iqs')
-#b = deepcopy(a)
-#del b['data']['site1']
-#write_iqs(b, os.path.join(dir_path, "site0.iqs"))
-split_iqs_file(dir_path + "/2um_100e5-20210203-102759-A94.iqs", dir_path + "/test.iqs")

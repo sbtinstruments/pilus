@@ -20,7 +20,6 @@ def open_iqs(file_name: str):
         while f.tell() != fileSize :
             chunk_length = read_uint32(f)
             chunk_type = _read_chunk_type(f)
-            
             if chunk_type == 'sYSI':
                 iqs["sys_info"] = _read_sysi(f, chunk_length)
             elif chunk_type == 'IHDR':

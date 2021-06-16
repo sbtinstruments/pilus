@@ -60,6 +60,8 @@ def to_IQSv1(iqs: dict, site=0) -> dict:
     site_name = "site" + str(site)
     assert site_name == "site0" or site_name == "site1"
     res["sys_info"] = iqs["sys_info"]
+    assert iqs["IHDR"][site_name]["lf"]["sample_time_step"] == iqs["IHDR"][site_name]["hf"]["sample_time_step"]
+    assert iqs["IHDR"][site_name]["lf"]["sample_max_signal_amplitude"] == iqs["IHDR"][site_name]["hf"]["sample_max_signal_amplitude"]
     res["SHDR"] = { "sample_time_step": iqs["IHDR"][site_name]["hf"]["sample_time_step"], 
                     "sample_max_signal_amplitude": iqs["IHDR"][site_name]["hf"]["sample_max_signal_amplitude"]}
     res["SDAT"] = []

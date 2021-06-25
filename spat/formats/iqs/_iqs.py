@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict
 
-from ...seed import Channel, ChannelMap, Seed
+from ...types import Snip
 from ._utils import (
     _get_file_size,
     _parse_iqs_channels,
@@ -20,7 +20,7 @@ from ._utils import (
 
 
 def from_iqs():
-    """Create Seed from iqs file."""
+    """Create snip from iqs file."""
     print("from iqs")
 
 
@@ -64,8 +64,8 @@ def write_iqs(iqs, file_name: str) -> bool:
     return True
 
 
-def load(file_path: Path, delimiter: str = "__") -> Seed:
-    """Load IQS file into it's seed representation."""
+def load(file_path: Path, delimiter: str = "__") -> Snip:
+    """Load IQS file into it's snip representation."""
     raw_iqs = open_iqs(str(file_path))
     for key, val in raw_iqs["data"]["site1"]["lf"].items():
         print(f"key:{key} type(val):{type(val)}")
@@ -93,4 +93,4 @@ def load(file_path: Path, delimiter: str = "__") -> Seed:
 
     # time_step =
 
-    return Seed(time_step_ns)
+    return Snip(time_step_ns)

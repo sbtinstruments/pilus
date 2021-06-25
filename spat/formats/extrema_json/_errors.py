@@ -1,2 +1,0 @@
-class ExtremaJsonError(Exception):
-    pass

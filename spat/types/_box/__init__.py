@@ -1,1 +1,1 @@
-from ._box import Box, BoxItem
+from ._box import Box, BoxValue

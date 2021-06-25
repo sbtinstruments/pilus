@@ -13,5 +13,5 @@ iqs_path: Path = Path("after2-measure-20191217-115350-0QX.iqs")
 
 
 def test_load():
-    seed = iqs.load(iqs_path)
-    print(seed)
+    snip = iqs.load(iqs_path)
+    print(snip)

@@ -1,9 +1,9 @@
-from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from typing import Tuple
 
-from pydantic.main import BaseModel
+from ..formats import register_parser
+from ..formats.model import Model, from_json_data
 
 
 class ExtremumType(Enum):
@@ -12,13 +12,15 @@ class ExtremumType(Enum):
     MAXIMUM = "Maximum"
 
 
-class Extremum(BaseModel):
+class Extremum(Model):
     time_point: datetime
     value: float
     type_: ExtremumType
 
-    class Config:
-        allow_mutation = False
+
+Extrema = Tuple[Extremum, ...]
 
 
-Extrema = Tuple[Extremum]
+register_parser(
+    "application/vnd.sbt.extrema+json", lambda data: from_json_data(Extrema, data)
+)

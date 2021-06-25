@@ -1,2 +1,0 @@
-class SeedError(Exception):
-    pass

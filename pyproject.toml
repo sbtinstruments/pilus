@@ -11,21 +11,25 @@ version = "0.1.0"
 [tool.poetry.dependencies]
 immutables = "^0.14"
 numpy = "^1.19"
-python = "^3.8"
+python = "^3.9"
 scipy = "^1.5"
-jsonschema = "^3.2.0"
 pydantic = "^1.8.1"
 pyhumps = "^1.6.1"
+tinydb = "^4.4.0"
+typeguard = "^2.12.1"
 
 [tool.poetry.dev-dependencies]
-black = {version = "^20.8b1", allow-prereleases = true}
-mypy = "^0.790"
-pylint = "^2.6.0"
+black = "^21.5b1"
+isort = "^5.8.0"
+mypy = "^0.812"
+pydocstyle = "^6.0.0"
+pylint = "^2.7.4"
+rope = "^0.18.0"
 pytest = "^5.2"
 pyfakefs = "^4.4.0"
 
 [tool.black]
-target-version = ['py38']
+target-version = ['py39']
 
 [tool.isort]
 profile = 'black'

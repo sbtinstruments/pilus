@@ -1,12 +1,9 @@
-from datetime import datetime, timedelta
+import json
 from pathlib import Path
 
-import pytest
-from immutables import Map
-from pytest import raises
+from immutables._map import Map
 
-from spat.formats import box
-from spat.types import Box
+from spat.formats import IdentifiedData, box
 
 
 def test_zip_as_box(fs) -> None:
@@ -22,10 +19,9 @@ def test_zip_as_box(fs) -> None:
         """,
     )
     fs.create_file("project/data/my_numbers.json", contents="[1, 2, 3, 4]")
-
     project = box.from_dir(Path("project"))
-
-    my_numbers = project[Path("data/my_numbers.json")]
-    print(f"my_numbers: {my_numbers}")
-
-    print(project)
+    data = project["data"]
+    assert isinstance(data, Map)
+    my_numbers = data["my_numbers.json"]
+    assert isinstance(my_numbers, IdentifiedData)
+    assert json.loads(my_numbers.data) == [1, 2, 3, 4]

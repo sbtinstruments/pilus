@@ -1,41 +1,24 @@
 from functools import reduce
-from typing import (
-    Any,
-    Generic,
-    Iterable,
-    Optional,
-    Type,
-    TypeVar,
-    Union,
-    get_args,
-    get_origin,
-)
+from typing import Any, Iterable, Optional, Type, TypeVar
 
-from pydantic import BaseModel
 from tinydb import TinyDB, where
 from tinydb.queries import Query, QueryInstance
 from tinydb.storages import MemoryStorage
 from typeguard import check_type
 
-from ._snip_key import AttributeSet
-
-SnipValue = Any
-
+from ._snip_attributes import (
+    SnipAttribute,
+    SnipAttributeDeclaration,
+    SnipAttributeSet,
+    SnipEnum,
+)
+from ._snip_part import SnipPart
 
 T = TypeVar("T")
 
 
-class SnipPart(BaseModel, Generic[T]):
-    value: T
-    name: str
-    attributes: AttributeSet = frozenset()
-
-    class Config:
-        frozen = True
-
-
 class Snip:
-    """Immutable, in-memory database
+    """Immutable, in-memory database.
 
     Common media type:     application/vnd.sbt.snip+zip
     Common file extension: .snip.zip
@@ -86,20 +69,19 @@ class Snip:
 
     """
 
-    def __init__(self, items) -> None:
+    def __init__(
+        self,
+        parts: Iterable[SnipPart[Any]],
+        attribute_declaration: SnipAttributeDeclaration,
+    ) -> None:
         self._db = TinyDB(storage=MemoryStorage)
         documents = (
-            {
-                "name": key.name,
-                "attributes": key.attributes,
-                "value": value,
-            }
-            for key, value in items.items()
+            {"name": part.name, "value": part.value, "attributes": part.attributes}
+            for part in parts
         )
-        self._data = self._db.table("data")
-        self._data.insert_multiple(documents)
-        # attributes: TagMap = Map()
-        # _items: Map[SnipKey, SnipValue] = Map()
+        self._parts = self._db.table("part")
+        self._parts.insert_multiple(documents)
+        self._attribute_declaration = attribute_declaration
 
     def get(
         self,
@@ -108,8 +90,8 @@ class Snip:
         *args: Any,
         **kwargs: Any,
     ) -> Optional[SnipPart[T]]:
-        query = self._get_query(type_, name, *args, **kwargs)
-        document = self._data.get(query)
+        query = self._args_to_query(type_, name, *args, **kwargs)
+        document = self._parts.get(query)
         if document is None:
             return None
         return SnipPart(**document)
@@ -121,17 +103,23 @@ class Snip:
         *args: Any,
         **kwargs: Any,
     ) -> Iterable[SnipPart[T]]:
-        query = self._get_query(type_, name, *args, **kwargs)
-        documents = self._data.search(query)
+        query = self._args_to_query(type_, name, *args, **kwargs)
+        documents = self._parts.search(query)
         return (SnipPart(**doc) for doc in documents)
 
-    def _get_query(
+    def _args_to_query(
         self,
         type_: Optional[type] = None,
         name: Optional[str] = None,
-        *,
-        attributes: Optional[Iterable[str]] = None,
+        **kwargs: str,
     ) -> QueryInstance:
+        attributes: Optional[SnipAttributeSet] = None
+        # Consider all keyword arguments for attributes
+        if kwargs:
+            # TODO: Use kwargs.keys() as well
+            attributes = frozenset(
+                self._attribute_declaration.parse_strings(kwargs.values())
+            )
         # Convert argument to queries
         queries: list[QueryInstance] = []
         if type_ is not None:
@@ -148,17 +136,20 @@ class Snip:
             queries.append(where("name") == name)
         if attributes is not None:
 
-            def _test_attributes(value: AttributeSet) -> bool:
+            def _test_attributes(value: SnipAttributeSet) -> bool:
                 assert attributes is not None
                 return value.issuperset(attributes)
 
             queries.append(where("attributes").test(_test_attributes))
+        # Raise error if there are no queries
+        if not queries:
+            raise ValueError("You must provide at least one argument")
         # Combine all queries into one
         query = reduce(Query.__and__, queries)
         return query
 
     def __iter__(self) -> Iterable[SnipPart[Any]]:
-        return (SnipPart(**doc) for doc in self._data)
+        return (SnipPart(**doc) for doc in self._parts)
 
 
 # @dataclass(frozen=True)

@@ -327,7 +327,7 @@ python-versions = "*"
 
 [[package]]
 name = "tinydb"
-version = "4.4.0"
+version = "4.5.0"
 description = "TinyDB is a tiny, document oriented database optimized for your happiness :)"
 category = "main"
 optional = false
@@ -663,8 +663,8 @@ snowballstemmer = [
     {file = "snowballstemmer-2.1.0.tar.gz", hash = "sha256:e997baa4f2e9139951b6f4c631bad912dfd3c792467e2f03d7239464af90e914"},
 ]
 tinydb = [
-    {file = "tinydb-4.4.0-py3-none-any.whl", hash = "sha256:30b0f718ebb288e42d2f69f3e1b18928739f25153e6b5308a234e95c1673de71"},
-    {file = "tinydb-4.4.0.tar.gz", hash = "sha256:d57c29524ecacc081ebc24f96e0d787bba11dc20d52634a32a709b878be3545a"},
+    {file = "tinydb-4.5.0-py3-none-any.whl", hash = "sha256:ab2669b88ba1e1b3e1bd6da1a1e3ee284fde6fbf327fb16a206ac3954915f37f"},
+    {file = "tinydb-4.5.0.tar.gz", hash = "sha256:d287cd092f19a2b8553d0a6018f172c351268fb8619898eb87633d9e2c036344"},
 ]
 toml = [
     {file = "toml-0.10.2-py2.py3-none-any.whl", hash = "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"},

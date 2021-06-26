@@ -1,12 +1,8 @@
 from pathlib import Path
-from typing import Dict
+from typing import Any, Dict, Iterable
 
-from immutables._map import Map
-
-from ...types import Box, Snip, SnipKey, SnipValue
+from ...types import Box, Snip, SnipAttributeDeclaration, SnipPart, SnipPartMetadata
 from .. import box as box_format
-from .._utility import freeze_mapping
-from ._attributes import Attributes
 from ._errors import SnipError
 
 
@@ -19,40 +15,43 @@ def from_dir(root: Path) -> Snip:
 
 
 def from_box(box: Box) -> Snip:
-    items = dict(box.items())
+    box_parts = dict(box.items())
 
     try:
-        attributes = items.pop("attributes.json")
+        attribute_declaration = box_parts.pop("attributes.json")
     except KeyError as exc:
-        raise SnipError('Could not find the "attributes.json" file')
-    if not isinstance(attributes, Attributes):
+        raise SnipError('Could not find the "attributes.json" file') from exc
+    if not isinstance(attribute_declaration, SnipAttributeDeclaration):
         raise SnipError('The "attributes.json" entry is not of the right type')
 
     try:
-        data = items.pop("data")
+        data = box_parts.pop("data")
     except KeyError as exc:
-        raise SnipError('Could not find the "data" directory')
+        raise SnipError('Could not find the "data" directory') from exc
     if not isinstance(data, Box):
         raise SnipError('The "data" entry is not a directory')
 
-    items = _resolve_data(data)
+    snip_parts = _resolve_parts(data, attribute_declaration=attribute_declaration)
 
-    if items:
-        key = next(iter(items))
+    # Raise an error if there are unexpected parts
+    if box_parts:
+        key = next(iter(box_parts))
         raise SnipError(f'Unexpected entry "{key}"')
 
-    return Snip(items)
+    return Snip(snip_parts, attribute_declaration)
 
 
-def _resolve_data(box: Box) -> SnipValue:
-    raw_items: Dict[str, SnipValue] = {}
+def _resolve_parts(
+    box: Box, *, attribute_declaration: SnipAttributeDeclaration
+) -> Iterable[SnipPart[Any]]:
     for key, box_item in box.items():
-        snip_item: SnipValue
         if isinstance(box_item, Box):
             raise SnipError(
                 f'Unexpected sub-directory inside the data directory: "{key}"'
             )
-        snip_item = box_item
-        snip_key = SnipKey.from_file_name(key)
-        raw_items[snip_key] = snip_item
-    return freeze_mapping(raw_items)
+        metadata = SnipPartMetadata.from_file_name(
+            key, attribute_declaration=attribute_declaration
+        )
+        yield SnipPart(
+            name=metadata.name, attributes=metadata.attributes, value=box_item
+        )

@@ -6,7 +6,7 @@ from immutables import Map
 from pytest import raises
 
 from spat.formats import snip
-from spat.types import Extrema, Extremum, ExtremumType, Snip
+from spat.types import Extrema, Extremum, ExtremumType, Snip, SnipEnum
 
 
 def test_snip(fs) -> None:
@@ -64,7 +64,7 @@ def test_snip(fs) -> None:
     )
 
     project = snip.from_dir(Path("project.snip"))
-    extrema_part = project.get(Extrema, name="part0", attributes=("production",))
+    extrema_part = project.get(Extrema, name="part0", site="production")
     assert extrema_part is not None
     extrema = extrema_part.value
 

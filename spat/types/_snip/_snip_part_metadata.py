@@ -1,21 +1,21 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, TypeVar
 
-from .._extremum import Extrema
+from pydantic.main import BaseModel
 
-AttributeSet = frozenset[str]
+from ._snip_attributes import SnipAttributeDeclaration, SnipAttributeSet
 
-@dataclass(frozen=True)
-class SnipKey:
-    type_: type
+
+class SnipPartMetadata(BaseModel):
     name: str
-    attributes: AttributeSet = frozenset()
+    attributes: SnipAttributeSet = frozenset()
 
     @classmethod
-    def from_file_name(cls, file_name: str) -> SnipKey:
+    def from_file_name(
+        cls, file_name: str, *, attribute_declaration: SnipAttributeDeclaration
+    ) -> SnipPartMetadata:
         """Split a file name into the corresponding snip components.
 
         Take the following string for example:
@@ -24,31 +24,25 @@ class SnipKey:
 
         We split this into:
 
-            type_: `Wave`
             name: "diff"
-            attributes: `frozenset` of "site0", "hf", and "im"
+            attributes: "site0", "hf", and "im"
         """
         # Example:
         #   "diff--site0--hf--im.wav-meta.json"
-        # splits into 
+        # splits into
         #   ("diff--site0--hf--im", ".wav-meta.json")
-        rest, suffixes = split_at_suffixes(file_name)
-        # Get type from suffixes
-        try:
-            type_ = _SUFFIXES_TO_TYPE_MAP[suffixes]
-        except KeyError as exc:
-            raise ValueError(f'Unknown extension for file: "{file_name}"') from exc
+        rest, _ = split_at_suffixes(file_name)
         # Get name and attribytes
-        name, attributes = extract_attributes(rest)
-        return cls(type_, name, attributes)
+        name, raw_attributes = extract_raw_attribute(rest)
+        # Parse raw attributes
+        attributes = frozenset(attribute_declaration.parse_strings(raw_attributes))
+        return cls(name=name, attributes=attributes)
+
+    class Config:
+        frozen = True
 
 
-_SUFFIXES_TO_TYPE_MAP = {
-    (".extrema", ".json"): Extrema
-}
-
-
-def extract_attributes(rest: str) -> tuple[str, frozenset[str]]:
+def extract_raw_attribute(rest: str) -> tuple[str, frozenset[str]]:
     parts = rest.split("--")
     assert parts, "There is always at least one element after a `split`"
     # The name is the first part
@@ -63,6 +57,8 @@ def extract_attributes(rest: str) -> tuple[str, frozenset[str]]:
 
 
 T = TypeVar("T")
+
+
 def get_duplicates(data: Iterable[T]) -> Iterable[T]:
     """Return the duplicates in the given data.
 
@@ -88,5 +84,5 @@ def split_at_suffixes(file_name: str) -> tuple[str, tuple[str, ...]]:
     path = Path(file_name)  # "source.tar.gz"
     suffixes = tuple(path.suffixes)  # (".tar", ".gz")
     suffixes_length = sum(len(s) for s in suffixes)  # 7 = 4 + 3
-    rest = file_name[:len(file_name)-suffixes_length]  # "source"
+    rest = file_name[: len(file_name) - suffixes_length]  # "source"
     return (rest, suffixes)  # ("source", (".tar", ".gz"))

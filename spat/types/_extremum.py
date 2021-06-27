@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Tuple
 
 from ..formats import register_parser
-from ..formats.model import Model, from_json_data
+from ..model import Model, from_json_data
 
 
 class ExtremumType(Enum):

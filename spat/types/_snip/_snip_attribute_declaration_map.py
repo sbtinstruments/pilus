@@ -1,12 +1,12 @@
-from enum import Enum, unique
-from typing import Iterable, Literal, Optional, Union
+from typing import Iterable, Optional
 
-from pydantic import Field, validator
+from pydantic import validator
 
 from ...formats import register_parser
-from ...formats.model import Model
+from ...model import Model
 from ._snip_attributes import (
     SnipAttribute,
+    SnipAttributeDeclaration,
     SnipAttributeType,
     SnipEnum,
     SnipEnumDeclaration,
@@ -14,7 +14,6 @@ from ._snip_attributes import (
     SnipIntDeclaration,
     SnipStr,
     SnipStrDeclaration,
-    SnipAttributeDeclaration,
 )
 
 # TODO: Replace `dict` with `immutables.Map` when pydantic supports custom

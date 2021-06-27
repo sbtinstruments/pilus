@@ -3,7 +3,7 @@ from typing import Literal, Union
 
 from pydantic import Field
 
-from ...formats.model import Model
+from ...model import Model
 
 
 @unique
@@ -13,6 +13,9 @@ class SnipAttributeType(str, Enum):
     ENUM = "enum"
 
 
+########################################################################################
+### Attribute declarations
+########################################################################################
 class SnipIntDeclaration(Model):
     type_: Literal[SnipAttributeType.INT] = Field(alias="type")
 
@@ -26,6 +29,9 @@ class SnipEnumDeclaration(Model):
     values: frozenset[str]
 
 
+########################################################################################
+### Attribute instances
+########################################################################################
 class SnipInt(Model):
     type_: Literal[SnipAttributeType.INT] = Field(alias="type")
     value: int

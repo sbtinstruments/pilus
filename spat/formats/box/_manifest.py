@@ -2,7 +2,7 @@ from pathlib import Path
 
 from pydantic import Field
 
-from ..model import Model
+from ...model import Model
 
 
 class Manifest(Model):

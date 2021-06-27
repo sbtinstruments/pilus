@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from ..formats import register_parser
-from ..formats.model import Model
+from ..model import Model
 
 
 class WavMeta(Model):

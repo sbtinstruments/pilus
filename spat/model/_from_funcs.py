@@ -5,7 +5,7 @@ from typing import Type, TypeVar, Union
 import pydantic
 from humps import decamelize
 
-from .._errors import SpatError, SpatJsonDecodeError, SpatOSError, SpatValidationError
+from ..formats import SpatError, SpatJsonDecodeError, SpatOSError, SpatValidationError
 
 T = TypeVar("T")
 

@@ -1,4 +1,5 @@
 from json import JSONDecodeError
+
 from pydantic import ValidationError
 
 
@@ -15,4 +16,7 @@ class SpatJsonDecodeError(SpatError, JSONDecodeError):
 
 
 class SpatValidationError(SpatError, ValidationError):
-    pass
+    """Error during validation.
+
+    Note that `ValidationError` inherits from `ValueError`.
+    """

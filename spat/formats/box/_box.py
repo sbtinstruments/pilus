@@ -5,7 +5,13 @@ from typing import Any, Optional
 from zipfile import ZipFile
 
 from ...types import Box, BoxValue
-from .._parser_map import IdentifiedData, IdentifiedIo, IdentifiedPath, parse
+from .._parser_map import (
+    IdentifiedData,
+    IdentifiedIo,
+    IdentifiedPath,
+    SpatNoParserError,
+    parse,
+)
 from ._errors import BoxError
 from ._manifest import Manifest
 
@@ -90,11 +96,11 @@ def _identify_and_parse_file(
         identified = IdentifiedIo(media_type, io)
         try:
             return parse(identified)
-        except ValueError:
+        except SpatNoParserError:
             if missing_parser_policy is MissingParserPolicy.STORE_DATA:
                 data = io.read()
                 return IdentifiedData(media_type, data)
-            elif missing_parser_policy is MissingParserPolicy.STORE_METADATA:
+            if missing_parser_policy is MissingParserPolicy.STORE_METADATA:
                 return IdentifiedPath(media_type, file)
             assert False
 

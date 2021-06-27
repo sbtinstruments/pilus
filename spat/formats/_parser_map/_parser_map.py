@@ -13,13 +13,17 @@ from ._identified_data import (
 )
 
 
+class SpatNoParserError(SpatError):
+    pass
+
+
 class FileParser(Protocol):
     def __call__(self, __file: Path) -> Any:
         ...
 
 
 class DataParser(Protocol):
-    def __call__(self, __data: Union[str, bytes]) -> Any:
+    def __call__(self, __data: bytes) -> Any:
         ...
 
 
@@ -101,8 +105,8 @@ class ParserGroup:
             return self.from_file
         try:
             from_io = self.auto_from_io()
-        except RuntimeError as exc:
-            raise RuntimeError(
+        except SpatNoParserError as exc:
+            raise SpatNoParserError(
                 "Can't generate file parser without an IO parser"
             ) from exc
         return generate_file_parser(from_io)
@@ -112,7 +116,7 @@ class ParserGroup:
         if self.from_io is not None:
             return self.from_io
         if self.from_data is None:  # [1]
-            raise RuntimeError("Can't generate IO parser without a data parser")
+            raise SpatNoParserError("Can't generate IO parser without a data parser")
         return generate_io_parser(self.from_data)
 
     def parse(self, identified: IdentifiedResource) -> Any:
@@ -139,29 +143,17 @@ class ParserGroup:
             # For now, we only support file paths
             if not identified.path.is_file():
                 raise ValueError("Path resource does not point to a file")
-            try:
-                from_file = self.auto_from_file()
-            except RuntimeError as exc:
-                raise SpatError(
-                    "No registered file parser found for media "
-                    f'type "{identified.media_type}"'
-                ) from exc
+            from_file = self.auto_from_file()
             return from_file(identified.path)
         # Resource is an IO stream. We use `from_io` to parse it. We auto-generate
         # `from_io` if it's missing.
         if isinstance(identified, IdentifiedIo):
-            try:
-                from_io = self.auto_from_io()
-            except RuntimeError as exc:
-                raise SpatError(
-                    "No registered IO parser found for media "
-                    f'type "{identified.media_type}"'
-                ) from exc
+            from_io = self.auto_from_io()
             return from_io(identified.io)
         # Resource is in-memory data. We use `from_data` to parse it.
         if isinstance(identified, IdentifiedData):
             if self.from_data is None:
-                raise SpatError(
+                raise SpatNoParserError(
                     "No registered data parser found for media "
                     f'type "{identified.media_type}"'
                 )
@@ -169,7 +161,7 @@ class ParserGroup:
         assert False
 
 
-# Global dicts of all registered parsers
+# Global dict of all registered parsers
 _MEDIA_TYPE_TO_PARSER_GROUP: dict[str, ParserGroup] = dict()
 
 
@@ -204,7 +196,7 @@ def parse(identified: IdentifiedResource) -> Any:
     try:
         group = _MEDIA_TYPE_TO_PARSER_GROUP[identified.media_type]
     except KeyError as exc:
-        raise SpatError(
+        raise SpatNoParserError(
             f'No parser found for media type: "{identified.media_type}"'
         ) from exc
     return group.parse(identified)

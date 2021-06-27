@@ -2,8 +2,7 @@ from typing import Iterable, Optional
 
 from pydantic import validator
 
-from ...formats import register_parsers
-from ...model import Model
+from ...model import Model, add_media_type
 from ._snip_attributes import (
     SnipAttribute,
     SnipAttributeDeclaration,
@@ -21,6 +20,7 @@ from ._snip_attributes import (
 _RootType = dict[str, SnipAttributeDeclaration]
 
 
+@add_media_type("application/vnd.sbt.snip.attributes+json")
 class SnipAttributeDeclarationMap(Model):
     """Attribute declarations for snip."""
 
@@ -117,9 +117,3 @@ def _get_enums(types: _RootType) -> Iterable[tuple[str, SnipEnumDeclaration]]:
     return (
         (name, t) for name, t in types.items() if isinstance(t, SnipEnumDeclaration)
     )
-
-
-register_parsers(
-    "application/vnd.sbt.snip.attributes+json",
-    from_data=SnipAttributeDeclarationMap.from_json_data,
-)

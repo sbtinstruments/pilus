@@ -59,12 +59,12 @@ def test_snip(fs) -> None:
             {
                 "timePoint": 123.000001,
                 "value": 42.1,
-                "type_": "Maximum"
+                "type_": "maximum"
             },
             {
                 "timePoint": 143,
                 "value": -8.8,
-                "type_": "Minimum"
+                "type_": "minimum"
             }
         ]""",
     )

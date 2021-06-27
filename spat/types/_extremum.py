@@ -3,13 +3,14 @@ from enum import Enum
 from typing import Tuple
 
 from ..formats import register_parsers
-from ..model import Model, from_json_data
+from ..formats.json import from_json_data
+from ..model import Model
 
 
 class ExtremumType(Enum):
     # Assign values for serialization purposes
-    MINIMUM = "Minimum"
-    MAXIMUM = "Maximum"
+    MINIMUM = "minimum"
+    MAXIMUM = "maximum"
 
 
 class Extremum(Model):

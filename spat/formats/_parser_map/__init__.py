@@ -4,4 +4,4 @@ from ._identified_data import (
     IdentifiedPath,
     IdentifiedResource,
 )
-from ._parser_map import parse, register_parsers
+from ._parser_map import SpatNoParserError, parse, register_parsers

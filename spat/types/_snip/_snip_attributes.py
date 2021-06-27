@@ -1,62 +1,49 @@
-from dataclasses import dataclass
-from typing import Iterable, Union
+from enum import Enum, unique
+from typing import Literal, Union
 
-from pydantic import validator
+from pydantic import Field
 
-from ...formats import register_parser
 from ...formats.model import Model
 
 
-class SnipEnum(Model):
-    value: str
+@unique
+class SnipAttributeType(str, Enum):
+    INT = "int"
+    STR = "str"
+    ENUM = "enum"
 
 
-SnipAttribute = Union[SnipEnum]
+class SnipIntDeclaration(Model):
+    type_: Literal[SnipAttributeType.INT] = Field(alias="type")
 
-SnipAttributeSet = frozenset[SnipAttribute]
+
+class SnipStrDeclaration(Model):
+    type_: Literal[SnipAttributeType.STR] = Field(alias="type")
 
 
-class SnipEnumType(Model):
+class SnipEnumDeclaration(Model):
+    type_: Literal[SnipAttributeType.ENUM] = Field(alias="type")
     values: frozenset[str]
 
 
-class SnipTypeDeclaration(Model):
-    # TODO: Replace `dict` with `immutables.Map` when pydantic supports custom
-    # data types.
-    enums: dict[str, SnipEnumType]
-
-    def enum_values(self) -> Iterable[str]:
-        return _get_values(self.enums.values())
-
-    @validator("enums")
-    def enums_are_globally_unique(
-        cls, v: dict[str, SnipEnumType]
-    ) -> dict[str, SnipEnumType]:
-        values = tuple(_get_values(v.values()))
-        if len(values) != len(frozenset(values)):
-            raise ValueError("Enum values must be globally unique")
-        return v
+class SnipInt(Model):
+    type_: Literal[SnipAttributeType.INT] = Field(alias="type")
+    value: int
 
 
-def _get_values(enums: Iterable[SnipEnumType]) -> Iterable[str]:
-    for enum in enums:
-        yield from enum.values
+class SnipStr(Model):
+    type_: Literal[SnipAttributeType.STR] = Field(alias="type")
+    value: str
 
 
-class SnipAttributeDeclaration(Model):
-    """Attribute declaration for snip."""
-
-    types: SnipTypeDeclaration
-
-    def parse_strings(self, raw_attributes: Iterable[str]) -> Iterable[SnipAttribute]:
-        return (self.parse_string(s) for s in raw_attributes)
-
-    def parse_string(self, raw_attribute: str) -> SnipAttribute:
-        if raw_attribute in self.types.enum_values():
-            return SnipEnum(value=raw_attribute)
-        raise ValueError(f'Could not parse attribute: "{raw_attribute}"')
+class SnipEnum(Model):
+    type_: Literal[SnipAttributeType.ENUM] = Field(alias="type")
+    value: str
 
 
-register_parser(
-    "application/vnd.sbt.snip.attributes+json", SnipAttributeDeclaration.from_json_data
-)
+# We use the `type_` field to disambiguate how pydantic parses the `Union`s.
+# See https://github.com/samuelcolvin/pydantic/issues/619
+SnipAttributeDeclaration = Union[
+    SnipIntDeclaration, SnipStrDeclaration, SnipEnumDeclaration
+]
+SnipAttribute = Union[SnipInt, SnipStr, SnipEnum]

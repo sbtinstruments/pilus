@@ -2,11 +2,10 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
-from immutables import Map
 from pytest import raises
 
 from spat.formats import snip
-from spat.types import Extrema, Extremum, ExtremumType, Snip, SnipEnum
+from spat.types import Extrema, Extremum, ExtremumType
 
 
 def test_snip(fs) -> None:
@@ -28,27 +27,33 @@ def test_snip(fs) -> None:
         "project.snip/attributes.json",
         contents="""
             {
-                "types": {
-                    "enums": {
-                        "site": {
-                            "values": ["site0", "site1"]
-                        },
-                        "frequency": {
-                            "values": ["hf", "lf"]
-                        },
-                        "part": {
-                            "values": ["re", "im"]
-                        },
-                        "settings": {
-                            "values": ["production", "tuned-for-bacillus"]
-                        }
-                    }
+                "site": {
+                    "type": "enum",
+                    "values": ["site0", "site1"]
+                },
+                "frequency": {
+                    "type": "enum",
+                    "values": ["hf", "lf"]
+                },
+                "part": {
+                    "type": "enum",
+                    "values": ["re", "im"]
+                },
+                "settings": {
+                    "type": "enum",
+                    "values": ["production", "tuned-for-bacillus"]
+                },
+                "id": {
+                    "type": "int"
+                },
+                "user": {
+                    "type": "str"
                 }
             }
         """,
     )
     fs.create_file(
-        "project.snip/data/part0--production.extrema.json",
+        "project.snip/data/part0--production--id=32--user=1000.extrema.json",
         contents="""[
             {
                 "timePoint": 123.000001,
@@ -64,9 +69,16 @@ def test_snip(fs) -> None:
     )
 
     project = snip.from_dir(Path("project.snip"))
-    extrema_part = project.get(Extrema, name="part0", site="production")
+    extrema_part = project.get(
+        Extrema, name="part0", settings="production", id=32, user="1000"
+    )
     assert extrema_part is not None
     extrema = extrema_part.value
+
+    extrema_attributes = extrema_part.metadata.attributes
+    assert extrema_attributes["settings"].value == "production"
+    assert extrema_attributes["id"].value == 32
+    assert extrema_attributes["user"].value == "1000"
 
     one_us = timedelta(microseconds=1)
     assert extrema == (

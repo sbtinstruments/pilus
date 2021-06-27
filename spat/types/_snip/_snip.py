@@ -6,13 +6,10 @@ from tinydb.queries import Query, QueryInstance
 from tinydb.storages import MemoryStorage
 from typeguard import check_type
 
-from ._snip_attributes import (
-    SnipAttribute,
-    SnipAttributeDeclaration,
-    SnipAttributeSet,
-    SnipEnum,
-)
+from ._snip_attribute_declaration_map import SnipAttributeDeclarationMap
+from ._snip_attributes import SnipAttribute
 from ._snip_part import SnipPart
+from ._snip_part_metadata import SnipAttributeMap, SnipPartMetadata
 
 T = TypeVar("T")
 
@@ -72,11 +69,15 @@ class Snip:
     def __init__(
         self,
         parts: Iterable[SnipPart[Any]],
-        attribute_declaration: SnipAttributeDeclaration,
+        attribute_declaration: SnipAttributeDeclarationMap,
     ) -> None:
         self._db = TinyDB(storage=MemoryStorage)
         documents = (
-            {"name": part.name, "value": part.value, "attributes": part.attributes}
+            {
+                "value": part.value,
+                "name": part.metadata.name,
+                "attributes": part.metadata.attributes,
+            }
             for part in parts
         )
         self._parts = self._db.table("part")
@@ -94,7 +95,7 @@ class Snip:
         document = self._parts.get(query)
         if document is None:
             return None
-        return SnipPart(**document)
+        return _doc_to_part(document)
 
     def search(
         self,
@@ -105,7 +106,7 @@ class Snip:
     ) -> Iterable[SnipPart[T]]:
         query = self._args_to_query(type_, name, *args, **kwargs)
         documents = self._parts.search(query)
-        return (SnipPart(**doc) for doc in documents)
+        return (_doc_to_part(doc) for doc in documents)
 
     def _args_to_query(
         self,
@@ -113,13 +114,11 @@ class Snip:
         name: Optional[str] = None,
         **kwargs: str,
     ) -> QueryInstance:
-        attributes: Optional[SnipAttributeSet] = None
-        # Consider all keyword arguments for attributes
+        AttributeNameAndValues = frozenset[tuple[str, SnipAttribute]]
+        attributes: Optional[AttributeNameAndValues] = None
+        # Consider all keyword arguments as attribute filters
         if kwargs:
-            # TODO: Use kwargs.keys() as well
-            attributes = frozenset(
-                self._attribute_declaration.parse_strings(kwargs.values())
-            )
+            attributes = frozenset(self._attribute_declaration.parse_kwargs(**kwargs))
         # Convert argument to queries
         queries: list[QueryInstance] = []
         if type_ is not None:
@@ -136,9 +135,10 @@ class Snip:
             queries.append(where("name") == name)
         if attributes is not None:
 
-            def _test_attributes(value: SnipAttributeSet) -> bool:
+            def _test_attributes(value: SnipAttributeMap) -> bool:
                 assert attributes is not None
-                return value.issuperset(attributes)
+                name_and_values: AttributeNameAndValues = frozenset(value.items())
+                return name_and_values.issuperset(attributes)
 
             queries.append(where("attributes").test(_test_attributes))
         # Raise error if there are no queries
@@ -149,7 +149,15 @@ class Snip:
         return query
 
     def __iter__(self) -> Iterable[SnipPart[Any]]:
-        return (SnipPart(**doc) for doc in self._parts)
+        return (_doc_to_part(doc) for doc in self._parts)
+
+
+def _doc_to_part(document: dict[str, Any]) -> SnipPart[Any]:
+    value = document["value"]
+    metadata = SnipPartMetadata(
+        name=document["name"], attributes=document["attributes"]
+    )
+    return SnipPart(value=value, metadata=metadata)
 
 
 # @dataclass(frozen=True)

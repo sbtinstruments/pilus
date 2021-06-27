@@ -3,18 +3,23 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Iterable, TypeVar
 
+from pydantic.fields import Field
 from pydantic.main import BaseModel
 
-from ._snip_attributes import SnipAttributeDeclaration, SnipAttributeSet
+from ._snip_attribute_declaration_map import SnipAttributeDeclarationMap
+from ._snip_attributes import SnipAttribute
+
+# TODO: Replace `dict` with `immutables.Map` when pydantic supports custom data types
+SnipAttributeMap = dict[str, SnipAttribute]
 
 
 class SnipPartMetadata(BaseModel):
     name: str
-    attributes: SnipAttributeSet = frozenset()
+    attributes: SnipAttributeMap = Field(default_factory=dict)
 
     @classmethod
     def from_file_name(
-        cls, file_name: str, *, attribute_declaration: SnipAttributeDeclaration
+        cls, file_name: str, *, attribute_declarations: SnipAttributeDeclarationMap
     ) -> SnipPartMetadata:
         """Split a file name into the corresponding snip components.
 
@@ -35,7 +40,7 @@ class SnipPartMetadata(BaseModel):
         # Get name and attribytes
         name, raw_attributes = extract_raw_attribute(rest)
         # Parse raw attributes
-        attributes = frozenset(attribute_declaration.parse_strings(raw_attributes))
+        attributes = dict(attribute_declarations.parse_strings(raw_attributes))
         return cls(name=name, attributes=attributes)
 
     class Config:
@@ -52,8 +57,8 @@ def extract_raw_attribute(rest: str) -> tuple[str, frozenset[str]]:
     # We don't allow duplicates
     if duplicates:
         raise ValueError(f"We don't allow duplicate attributes: {duplicates}")
-    attributes = frozenset(parts)
-    return (name, attributes)
+    raw_attributes = frozenset(parts)
+    return (name, raw_attributes)
 
 
 T = TypeVar("T")

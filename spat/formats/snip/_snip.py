@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any, Dict, Iterable
 
-from ...types import Box, Snip, SnipAttributeDeclaration, SnipPart, SnipPartMetadata
+from ...types import Box, Snip, SnipAttributeDeclarationMap, SnipPart, SnipPartMetadata
 from .. import box as box_format
 from ._errors import SnipError
 
@@ -18,10 +18,10 @@ def from_box(box: Box) -> Snip:
     box_parts = dict(box.items())
 
     try:
-        attribute_declaration = box_parts.pop("attributes.json")
+        attribute_declarations = box_parts.pop("attributes.json")
     except KeyError as exc:
         raise SnipError('Could not find the "attributes.json" file') from exc
-    if not isinstance(attribute_declaration, SnipAttributeDeclaration):
+    if not isinstance(attribute_declarations, SnipAttributeDeclarationMap):
         raise SnipError('The "attributes.json" entry is not of the right type')
 
     try:
@@ -31,18 +31,18 @@ def from_box(box: Box) -> Snip:
     if not isinstance(data, Box):
         raise SnipError('The "data" entry is not a directory')
 
-    snip_parts = _resolve_parts(data, attribute_declaration=attribute_declaration)
+    snip_parts = _resolve_parts(data, attribute_declarations=attribute_declarations)
 
     # Raise an error if there are unexpected parts
     if box_parts:
         key = next(iter(box_parts))
         raise SnipError(f'Unexpected entry "{key}"')
 
-    return Snip(snip_parts, attribute_declaration)
+    return Snip(snip_parts, attribute_declarations)
 
 
 def _resolve_parts(
-    box: Box, *, attribute_declaration: SnipAttributeDeclaration
+    box: Box, *, attribute_declarations: SnipAttributeDeclarationMap
 ) -> Iterable[SnipPart[Any]]:
     for key, box_item in box.items():
         if isinstance(box_item, Box):
@@ -50,8 +50,6 @@ def _resolve_parts(
                 f'Unexpected sub-directory inside the data directory: "{key}"'
             )
         metadata = SnipPartMetadata.from_file_name(
-            key, attribute_declaration=attribute_declaration
+            key, attribute_declarations=attribute_declarations
         )
-        yield SnipPart(
-            name=metadata.name, attributes=metadata.attributes, value=box_item
-        )
+        yield SnipPart(value=box_item, metadata=metadata)

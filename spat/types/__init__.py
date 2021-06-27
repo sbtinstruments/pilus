@@ -3,8 +3,8 @@ from ._extremum import Extrema, Extremum, ExtremumType
 from ._snip import (
     Snip,
     SnipAttribute,
-    SnipAttributeDeclaration,
-    SnipAttributeSet,
+    SnipAttributeDeclarationMap,
+    SnipAttributeMap,
     SnipEnum,
     SnipPart,
     SnipPartMetadata,

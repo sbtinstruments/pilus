@@ -25,7 +25,7 @@ def from_json_data(type_: Type[T], data: Union[str, bytes]) -> T:
     try:
         obj_camel = json.loads(data)
     except json.JSONDecodeError as exc:
-        raise SpatJsonDecodeError(f"Could not parse file: {str(exc)}") from exc
+        raise SpatJsonDecodeError(exc.msg, exc.doc, exc.pos) from exc
     obj_snake = decamelize(obj_camel)
     try:
         return pydantic.parse_obj_as(type_, obj_snake)

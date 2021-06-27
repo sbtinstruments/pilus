@@ -2,7 +2,7 @@ from typing import Iterable, Optional
 
 from pydantic import validator
 
-from ...formats import register_parser
+from ...formats import register_parsers
 from ...model import Model
 from ._snip_attributes import (
     SnipAttribute,
@@ -119,7 +119,7 @@ def _get_enums(types: _RootType) -> Iterable[tuple[str, SnipEnumDeclaration]]:
     )
 
 
-register_parser(
+register_parsers(
     "application/vnd.sbt.snip.attributes+json",
-    SnipAttributeDeclarationMap.from_json_data,
+    from_data=SnipAttributeDeclarationMap.from_json_data,
 )

@@ -5,7 +5,7 @@ import pytest
 from pytest import raises
 
 from spat.formats import snip
-from spat.types import Extrema, Extremum, ExtremumType
+from spat.types import Extrema, Extremum, ExtremumType, Wave
 
 
 def test_snip(fs) -> None:
@@ -15,7 +15,8 @@ def test_snip(fs) -> None:
         contents="""
             {
                 "extensionToMediaType": {
-                    ".extrema.json": "application/vnd.sbt.extrema+json"
+                    ".extrema.json": "application/vnd.sbt.extrema+json",
+                    ".wav": "audio/vnd.wave"
                 },
                 "pathToMediaType": {
                     "attributes.json": "application/vnd.sbt.snip.attributes+json"
@@ -67,6 +68,7 @@ def test_snip(fs) -> None:
             }
         ]""",
     )
+    fs.add_real_file("beat.wav", target_path="project.snip/data/part0.wav")
 
     project = snip.from_dir(Path("project.snip"))
     extrema_part = project.get(
@@ -93,3 +95,8 @@ def test_snip(fs) -> None:
             type_=ExtremumType.MINIMUM,
         ),
     )
+
+    wave_part = project.get(Wave)
+    assert wave_part is not None
+    wave = wave_part.value
+    assert wave.byte_depth == 2

@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Tuple
 
-from ..formats import register_parser
+from ..formats import register_parsers
 from ..model import Model, from_json_data
 
 
@@ -21,6 +21,7 @@ class Extremum(Model):
 Extrema = Tuple[Extremum, ...]
 
 
-register_parser(
-    "application/vnd.sbt.extrema+json", lambda data: from_json_data(Extrema, data)
+register_parsers(
+    "application/vnd.sbt.extrema+json",
+    from_data=lambda data: from_json_data(Extrema, data),
 )

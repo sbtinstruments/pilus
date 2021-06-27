@@ -9,5 +9,5 @@ from ._snip import (
     SnipPart,
     SnipPartMetadata,
 )
-from ._wav_meta import WavMeta
 from ._wave import Wave
+from ._wave_meta import WaveMeta

@@ -7,9 +7,9 @@ from spat.formats import IdentifiedData, box
 
 
 def test_zip_as_box(fs) -> None:
-    fs.create_dir("project")
+    fs.create_dir("project.box")
     fs.create_file(
-        "project/manifest.json",
+        "project.box/manifest.json",
         contents="""
             {
                 "extensionToMediaType": {
@@ -18,8 +18,8 @@ def test_zip_as_box(fs) -> None:
             }
         """,
     )
-    fs.create_file("project/data/my_numbers.json", contents="[1, 2, 3, 4]")
-    project = box.from_dir(Path("project"))
+    fs.create_file("project.box/data/my_numbers.json", contents="[1, 2, 3, 4]")
+    project = box.from_dir(Path("project.box"))
     data = project["data"]
     assert isinstance(data, Map)
     my_numbers = data["my_numbers.json"]

@@ -1,10 +1,11 @@
 import logging
+from enum import Enum, unique
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 from zipfile import ZipFile
 
 from ...types import Box, BoxValue
-from .._parser_map import IdentifiedData, try_parse
+from .._parser_map import IdentifiedData, IdentifiedIo, IdentifiedPath, parse
 from ._errors import BoxError
 from ._manifest import Manifest
 
@@ -12,6 +13,12 @@ _LOGGER = logging.getLogger(__name__)
 
 
 _MANIFEST_PATH = Path("manifest.json")
+
+
+@unique
+class MissingParserPolicy(Enum):
+    STORE_DATA = "store-data"
+    STORE_METADATA = "store-metadata"
 
 
 def from_file(file: Path) -> Box:
@@ -22,9 +29,13 @@ def from_file(file: Path) -> Box:
 def from_dir(
     directory: Path,
     *,
+    missing_parser_policy: Optional[MissingParserPolicy] = None,
     root: Optional[Path] = None,
     manifest: Optional[Manifest] = None,
 ) -> Box:
+    # Default arguments
+    if missing_parser_policy is None:
+        missing_parser_policy = MissingParserPolicy.STORE_METADATA
     if root is None:
         root = directory
     if not directory.is_dir():
@@ -38,20 +49,27 @@ def from_dir(
         children.remove(manifest_path)
     # Resolve the children in the directory
     resolved_children: dict[str, BoxValue] = {
-        c.name: _resolve_child(c, root=root, manifest=manifest) for c in children
+        c.name: _resolve_child(
+            c,
+            missing_parser_policy=missing_parser_policy,
+            root=root,
+            manifest=manifest,
+        )
+        for c in children
     }
     return Box(**resolved_children)
 
 
-def _resolve_child(child: Path, *, root: Path, manifest: Manifest) -> BoxValue:
+def _resolve_child(
+    child: Path,
+    **kwargs: Any,
+) -> BoxValue:
     # Recurse into sub-directory
     if child.is_dir():
-        return from_dir(child, root=root, manifest=manifest)
+        return from_dir(child, **kwargs)
     # Identify and parse file
     if child.is_file():
-        identified = _identify_file(child, root=root, manifest=manifest)
-        # Try to parse file
-        return try_parse(identified)
+        return _identify_and_parse_file(child, **kwargs)
     # Raise specific error on symlink
     if child.is_symlink():
         raise BoxError(f"We don't support symlinks: {child}")
@@ -59,13 +77,26 @@ def _resolve_child(child: Path, *, root: Path, manifest: Manifest) -> BoxValue:
     raise BoxError(f"Unknown child: {child}")
 
 
-def _identify_file(file: Path, *, root: Path, manifest: Manifest) -> IdentifiedData:
-    """Identify file using the manifest."""
+def _identify_and_parse_file(
+    file: Path,
+    *,
+    missing_parser_policy: MissingParserPolicy,
+    root: Path,
+    manifest: Manifest,
+) -> BoxValue:
+    """Identify file type using the manifest."""
     media_type = _get_media_type(file, root=root, manifest=manifest)
-    # Read the data into memory
-    with file.open("rb") as f:
-        data = f.read()
-    return IdentifiedData(media_type, data)
+    with file.open("rb") as io:
+        identified = IdentifiedIo(media_type, io)
+        try:
+            return parse(identified)
+        except ValueError:
+            if missing_parser_policy is MissingParserPolicy.STORE_DATA:
+                data = io.read()
+                return IdentifiedData(media_type, data)
+            elif missing_parser_policy is MissingParserPolicy.STORE_METADATA:
+                return IdentifiedPath(media_type, file)
+            assert False
 
 
 def _get_media_type(file: Path, *, root: Path, manifest: Manifest) -> str:

@@ -9,5 +9,6 @@ Resource = Union[Path, BinaryIO, bytes]
 class IdentifiedResource:
     """Resource (path, IO stream, data, etc.) identified by a media type."""
 
+    # TODO: Validate the media type. E.g., does it contain a "/" or valid "+" suffix?
     media_type: str
     resource: Resource

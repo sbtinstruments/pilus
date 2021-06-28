@@ -55,4 +55,6 @@ def from_io(type_: Type[T], io: BinaryIO) -> T:
     except wave.Error as exc:
         raise SpatWaveError(f'Could not parse WAVE data: "{exc}"') from exc
     # Wrap metadata and data into the given type
+    # TODO: TESTING
+    data = bytes()
     return type_(byte_depth, time_step_ns, data)

@@ -4,6 +4,7 @@ from typing import Any, Iterable, Protocol, Type, TypeVar
 from .. import box as box_format
 from ..box import Box
 from ._errors import SnipError
+from ._merge_snip_parts import merge_snip_parts
 from ._snip_attribute_declaration_map import SnipAttributeDeclarationMap
 from ._snip_part import SnipPart
 from ._snip_part_metadata import SnipPartMetadata
@@ -56,7 +57,10 @@ def from_box(type_: Type[T], box: Box) -> T:
         key = next(iter(box_parts))
         raise SnipError(f'Unexpected entry "{key}"')
 
-    return type_(snip_parts, attribute_declarations)
+    # Merge parts
+    nerged_parts = merge_snip_parts(snip_parts)
+
+    return type_(nerged_parts, attribute_declarations)
 
 
 def _resolve_parts(

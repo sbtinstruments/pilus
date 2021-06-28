@@ -48,7 +48,7 @@ class ParserGroup:
         return ParserGroup(from_dir, from_file, from_io, from_data)
 
     def auto_from_file(self) -> FileParser:
-        """Generate and return a file parser if it is missing."""
+        """Return file parser (generate the parser if it's missing)."""
         if self.from_file is not None:
             return self.from_file
         try:
@@ -60,7 +60,7 @@ class ParserGroup:
         return generate_file_parser(from_io)
 
     def auto_from_io(self) -> IoParser:
-        """Generate and return an IO parser if it is missing."""
+        """Return IO parser (generate the parser if it's missing)."""
         if self.from_io is not None:
             return self.from_io
         if self.from_data is None:  # [1]

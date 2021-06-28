@@ -1,16 +1,14 @@
 from __future__ import annotations
 
-from pathlib import Path
-
+from immutables import Map
+from pydantic import BaseModel
 from pydantic.fields import Field
-from pydantic.main import BaseModel
 
-from ...utility import find_duplicates
+from ...utility import find_duplicates, split_at_suffixes
 from ._snip_attribute_declaration_map import SnipAttributeDeclarationMap
 from ._snip_attributes import SnipAttribute
 
-# TODO: Replace `dict` with `immutables.Map` when pydantic supports custom data types
-SnipAttributeMap = dict[str, SnipAttribute]
+SnipAttributeMap = Map[str, SnipAttribute]
 
 
 class SnipPartMetadata(BaseModel):
@@ -33,6 +31,8 @@ class SnipPartMetadata(BaseModel):
 
             name: "diff"
             attributes: "site0", "hf", and "im"
+
+        Note that we discard the suffix(es) (e.g., ".wav").
         """
         # Example:
         #   "diff--site0--hf--im.wav-meta.json"
@@ -42,11 +42,16 @@ class SnipPartMetadata(BaseModel):
         # Get name and attribytes
         name, raw_attributes = _extract_raw_attribute(rest)
         # Parse raw attributes
-        attributes = dict(attribute_declarations.parse_raw_attributes(raw_attributes))
+        attributes: SnipAttributeMap = Map(
+            **dict(attribute_declarations.parse_raw_attributes(raw_attributes))
+        )
         return cls(name=name, attributes=attributes)
 
     class Config:  # pylint: disable=too-few-public-methods
         frozen = True
+        # For `immutables.Map`
+        # TODO: Can we use a validator instead?
+        arbitrary_types_allowed = True
 
 
 def _extract_raw_attribute(rest: str) -> tuple[str, frozenset[str]]:
@@ -61,19 +66,3 @@ def _extract_raw_attribute(rest: str) -> tuple[str, frozenset[str]]:
         raise ValueError(f"We don't allow duplicate attributes: {duplicates}")
     raw_attributes = frozenset(parts)
     return (name, raw_attributes)
-
-
-def split_at_suffixes(file_name: str) -> tuple[str, tuple[str, ...]]:
-    """Split into (rest, suffixes).
-
-    Examples:
-        split_at_suffixes("source.tar.gz")  == ("source", (".tar", ".gz"))
-        split_at_suffixes("source.tar.gz.") == ('source.tar.gz.', ())
-        split_at_suffixes(".tar.gz")        == (".tar", (".gz",))
-        split_at_suffixes("...source")      == ('...source', ())
-    """
-    path = Path(file_name)  # "source.tar.gz"
-    suffixes = tuple(path.suffixes)  # (".tar", ".gz")
-    suffixes_length = sum(len(s) for s in suffixes)  # 7 = 4 + 3
-    rest = file_name[: len(file_name) - suffixes_length]  # "source"
-    return (rest, suffixes)  # ("source", (".tar", ".gz"))

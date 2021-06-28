@@ -1,11 +1,13 @@
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from spat.basic import Extrema, Extremum, ExtremumType, Wave
+from pyfakefs.fake_filesystem import FakeFilesystem
+
+from spat.basic import Extrema, Extremum, ExtremumType, Wave, WaveMeta
 from spat.snipdb import SnipDb
 
 
-def test_snip(fs) -> None:
+def test_snip(fs: FakeFilesystem) -> None:
     fs.create_dir("project.snip")
     fs.create_file(
         "project.snip/manifest.json",
@@ -13,7 +15,8 @@ def test_snip(fs) -> None:
             {
                 "extensionToMediaType": {
                     ".extrema.json": "application/vnd.sbt.extrema+json",
-                    ".wav": "audio/vnd.wave"
+                    ".wav": "audio/vnd.wave",
+                    ".wave-meta.json": "application/vnd.sbt.wave-meta+json"
                 },
                 "pathToMediaType": {
                     "attributes.json": "application/vnd.sbt.snip.attributes+json"
@@ -37,7 +40,10 @@ def test_snip(fs) -> None:
                     "type": "enum",
                     "values": ["re", "im"]
                 },
-                "settings": {register_parsers
+                "settings": {
+                    "type": "enum",
+                    "values": ["production", "tuned-for-bacillus"]
+                },
                 "id": {
                     "type": "int"
                 },
@@ -63,8 +69,18 @@ def test_snip(fs) -> None:
         ]""",
     )
     fs.add_real_file("beat.wav", target_path="project.snip/data/part0.wav")
+    fs.create_file(
+        "project.snip/data/part0.wave-meta.json",
+        contents="""
+            {
+                "startTime": 1231231231,
+                "maxValue": 123
+            }
+        """,
+    )
 
     project = SnipDb.from_dir(Path("project.snip"))
+
     extrema_part = project.get(
         Extrema, name="part0", settings="production", id=32, user="1000"
     )
@@ -94,3 +110,7 @@ def test_snip(fs) -> None:
     assert wave_part is not None
     wave = wave_part.value
     assert wave.byte_depth == 2
+
+    wave_meta_part = project.get(WaveMeta)
+    # We merge `WaveMeta` into `Wave`, so the former isn't present in the output
+    assert wave_meta_part is None

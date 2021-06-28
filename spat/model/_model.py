@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import BinaryIO, ClassVar, Type, TypeVar, cast
+from typing import ClassVar, Type, TypeVar, cast
 
 from pydantic import BaseModel
 

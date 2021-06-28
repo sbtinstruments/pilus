@@ -2,4 +2,4 @@ from .._errors import SpatError
 
 
 class BoxError(SpatError):
-    pass
+    """Raised if we fail to parse the box format."""

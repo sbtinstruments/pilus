@@ -4,15 +4,15 @@ from pydantic import ValidationError
 
 
 class SpatError(Exception):
-    pass
+    """Base class for all exceptions in the spat package."""
 
 
 class SpatOSError(SpatError, OSError):
-    pass
+    """OS-level error in the spat package."""
 
 
 class SpatJsonDecodeError(SpatError, JSONDecodeError):
-    pass
+    """Error while we decode JSON in the spat package."""
 
 
 class SpatValidationError(SpatError, ValidationError):

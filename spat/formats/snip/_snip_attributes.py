@@ -8,6 +8,8 @@ from ...model import Model
 
 @unique
 class SnipAttributeType(str, Enum):
+    """Snip attributes can have these fundamental types."""
+
     INT = "int"
     STR = "str"
     ENUM = "enum"
@@ -17,14 +19,20 @@ class SnipAttributeType(str, Enum):
 ### Attribute declarations
 ########################################################################################
 class SnipIntDeclaration(Model):
+    """Type declaration of an integer snip attribute."""
+
     type_: Literal[SnipAttributeType.INT] = Field(alias="type")
 
 
 class SnipStrDeclaration(Model):
+    """Type declaration of a string snip attribute."""
+
     type_: Literal[SnipAttributeType.STR] = Field(alias="type")
 
 
 class SnipEnumDeclaration(Model):
+    """Type declaration of an enum snip attribute."""
+
     type_: Literal[SnipAttributeType.ENUM] = Field(alias="type")
     values: frozenset[str]
 
@@ -33,16 +41,22 @@ class SnipEnumDeclaration(Model):
 ### Attribute instances
 ########################################################################################
 class SnipInt(Model):
+    """Instance of an integer snip attribute."""
+
     type_: Literal[SnipAttributeType.INT] = Field(alias="type")
     value: int
 
 
 class SnipStr(Model):
+    """Instance of a string snip attribute."""
+
     type_: Literal[SnipAttributeType.STR] = Field(alias="type")
     value: str
 
 
 class SnipEnum(Model):
+    """Instance of an enum snip attribute."""
+
     type_: Literal[SnipAttributeType.ENUM] = Field(alias="type")
     value: str
 

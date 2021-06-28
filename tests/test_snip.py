@@ -1,9 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-import pytest
-from pytest import raises
-
 from spat.basic import Extrema, Extremum, ExtremumType, Wave
 from spat.snipdb import SnipDb
 
@@ -40,10 +37,7 @@ def test_snip(fs) -> None:
                     "type": "enum",
                     "values": ["re", "im"]
                 },
-                "settings": {
-                    "type": "enum",
-                    "values": ["production", "tuned-for-bacillus"]
-                },
+                "settings": {register_parsers
                 "id": {
                     "type": "int"
                 },

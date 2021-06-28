@@ -7,13 +7,7 @@ from typing import Any, Optional
 # `_map.pyi` file).
 from immutables import Map
 
-from .._parser_map import (
-    IdentifiedData,
-    IdentifiedIo,
-    IdentifiedPath,
-    SpatNoParserError,
-    parse,
-)
+from .._parse import IdentifiedResource, Resource, SpatNoParserError, parse
 from ._errors import BoxError
 from ._manifest import Manifest
 
@@ -105,17 +99,18 @@ def _identify_and_parse_file(
 ) -> Any:
     """Identify file type using the manifest."""
     media_type = _get_media_type(file, root=root, manifest=manifest)
-    with file.open("rb") as io:
-        identified = IdentifiedIo(media_type, io)
-        try:
-            return parse(identified)
-        except SpatNoParserError:
-            if missing_parser_policy is MissingParserPolicy.STORE_DATA:
-                data = io.read()
-                return IdentifiedData(media_type, data)
-            if missing_parser_policy is MissingParserPolicy.STORE_METADATA:
-                return IdentifiedPath(media_type, file)
+    try:
+        return parse(media_type, file)
+    except SpatNoParserError:
+        resource: Resource
+        if missing_parser_policy is MissingParserPolicy.STORE_DATA:
+            resource = file.read_bytes()
+        elif missing_parser_policy is MissingParserPolicy.STORE_METADATA:
+            resource = file
+        else:
+            # We cover all `MissingParserPolicy` values
             assert False
+        return IdentifiedResource(media_type, resource)
 
 
 def _get_media_type(file: Path, *, root: Path, manifest: Manifest) -> str:

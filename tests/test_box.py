@@ -4,7 +4,7 @@ from pathlib import Path
 from immutables import Map
 from pyfakefs.fake_filesystem import FakeFilesystem
 
-from spat.formats import IdentifiedData, box
+from spat.formats import IdentifiedResource, box
 
 
 def test_zip_as_box(fs: FakeFilesystem) -> None:
@@ -26,5 +26,6 @@ def test_zip_as_box(fs: FakeFilesystem) -> None:
     data = project["data"]
     assert isinstance(data, Map)
     my_numbers = data["my_numbers.json"]
-    assert isinstance(my_numbers, IdentifiedData)
-    assert json.loads(my_numbers.data) == [1, 2, 3, 4]
+    assert isinstance(my_numbers, IdentifiedResource)
+    assert isinstance(my_numbers.resource, bytes)
+    assert json.loads(my_numbers.resource) == [1, 2, 3, 4]

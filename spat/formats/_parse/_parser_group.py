@@ -1,95 +1,20 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Any, BinaryIO, Optional, Protocol, Union
+from os import PathLike
+from typing import Any, BinaryIO, Optional
 
-from .._errors import SpatError, SpatOSError
-from ._identified_data import (
-    IdentifiedData,
-    IdentifiedIo,
-    IdentifiedPath,
-    IdentifiedResource,
-)
-
-
-class SpatNoParserError(SpatError):
-    """Raised when we can't find a parser for a given media type."""
-
-
-class DirParser(Protocol):  # pylint: disable=too-few-public-methods
-    """Callable that parses a directory and returns a corresponding object."""
-
-    def __call__(self, __root: Path) -> Any:  # noqa: D102
-        ...
-
-
-class FileParser(Protocol):  # pylint: disable=too-few-public-methods
-    """Callable that parses a file and returns a corresponding object."""
-
-    def __call__(self, __file: Path) -> Any:  # noqa: D102
-        ...
-
-
-class DataParser(Protocol):  # pylint: disable=too-few-public-methods
-    """Callable that parses binary data and returns a corresponding object."""
-
-    def __call__(self, __data: bytes) -> Any:  # noqa: D102
-        ...
-
-
-class IoParser(Protocol):  # pylint: disable=too-few-public-methods
-    """Callable that parses an IO stream and returns a corresponding object."""
-
-    def __call__(self, __io: BinaryIO) -> Any:  # noqa: D102
-        ...
-
-
-Parser = Union[DataParser, IoParser, DataParser]
-
-
-def generate_file_parser(io_parser: IoParser) -> FileParser:
-    """Return auto-generated file parser from the given IO parser."""
-
-    def _from_file(file: Path) -> Any:
-        # Open file as IO stream
-        try:
-            io = file.open("rb")
-        except OSError as exc:
-            raise SpatOSError(f"Could not open file: {str(exc)}") from exc
-        # Read and parse IO stream
-        try:
-            return io_parser(io)
-        finally:
-            io.close()
-
-    return _from_file
-
-
-def generate_io_parser(data_parser: DataParser) -> IoParser:
-    """Return auto-generated IO parser from the given data parser.
-
-    The generated parser simply reads all data into memory and forwards it to
-    the data parser.
-    """
-
-    def _from_io(io: BinaryIO) -> Any:
-        # Read everything into memory
-        try:
-            data = io.read()
-        except OSError as exc:
-            raise SpatOSError(f"Could not read file: {str(exc)}") from exc
-        # Return parsed data
-        return data_parser(data)
-
-    return _from_io
+from ._errors import SpatNoParserError
+from ._generate_parser import generate_file_parser, generate_io_parser
+from ._parser import DataParser, DirParser, FileParser, IoParser
+from ._resource import IdentifiedResource
 
 
 @dataclass(frozen=True)
 class ParserGroup:
     """Group of parsers and utilities to auto-generate missing parsers."""
 
-    from_dir: Optional[FileParser] = None
+    from_dir: Optional[DirParser] = None
     from_file: Optional[FileParser] = None
     from_io: Optional[IoParser] = None
     from_data: Optional[DataParser] = None
@@ -162,74 +87,35 @@ class ParserGroup:
         # Resource is a path. If the path points to a directory, we use `from_dir` to
         # parse it. If the path points to a file, we use `from_file` to parse it.
         # We auto-generate `from_file` if it's missing.
-        if isinstance(identified, IdentifiedPath):
+        #
+        # Note that we use `PathLike` and not `Path` so that alternative paths
+        # also work. E.g., pyfakefs paths.
+        if isinstance(identified.resource, PathLike):
             # Directory
-            if identified.path.is_dir():
+            if identified.resource.is_dir():
                 if self.from_dir is None:
                     raise SpatNoParserError(
                         "No registered directory parser found for media "
                         f'type "{identified.media_type}"'
                     )
-                return self.from_dir(identified.path)
+                return self.from_dir(identified.resource)
             # File
-            if identified.path.is_file():
+            if identified.resource.is_file():
                 from_file = self.auto_from_file()
-                return from_file(identified.path)
+                return from_file(identified.resource)
             # Other
             raise ValueError("Path resource does not point to a directory or file")
         # Resource is an IO stream. We use `from_io` to parse it. We auto-generate
         # `from_io` if it's missing.
-        if isinstance(identified, IdentifiedIo):
+        if isinstance(identified.resource, BinaryIO):
             from_io = self.auto_from_io()
-            return from_io(identified.io)
+            return from_io(identified.resource)
         # Resource is in-memory data. We use `from_data` to parse it.
-        if isinstance(identified, IdentifiedData):
+        if isinstance(identified.resource, bytes):
             if self.from_data is None:
                 raise SpatNoParserError(
                     "No registered data parser found for media "
                     f'type "{identified.media_type}"'
                 )
-            return self.from_data(identified.data)
+            return self.from_data(identified.resource)
         assert False
-
-
-# Global dict of all registered parsers
-_MEDIA_TYPE_TO_PARSER_GROUP: dict[str, ParserGroup] = dict()
-
-
-def register_parsers(
-    media_type: str,
-    *,
-    from_dir: Optional[DirParser] = None,
-    from_file: Optional[FileParser] = None,
-    from_io: Optional[IoParser] = None,
-    from_data: Optional[DataParser] = None,
-) -> None:
-    """Use the parsers for the given media type."""
-    group = ParserGroup(from_dir, from_file, from_io, from_data)
-    register_parser_group(media_type, group)
-
-
-def register_parser_group(media_type: str, group: ParserGroup) -> None:
-    """Use the parser group for the given media type."""
-    if group.is_empty():
-        raise ValueError("You must specify at least one parser")
-    # If there is no existing group, we simply assign the given group
-    try:
-        existing_group = _MEDIA_TYPE_TO_PARSER_GROUP[media_type]
-    except KeyError:
-        _MEDIA_TYPE_TO_PARSER_GROUP[media_type] = group
-        return
-    # Otherwise, we attempt to merge the two groups and use the result
-    _MEDIA_TYPE_TO_PARSER_GROUP[media_type] = existing_group.merge(group)
-
-
-def parse(identified: IdentifiedResource) -> Any:
-    """Parse the given resource and return the result."""
-    try:
-        group = _MEDIA_TYPE_TO_PARSER_GROUP[identified.media_type]
-    except KeyError as exc:
-        raise SpatNoParserError(
-            f'No parser found for media type: "{identified.media_type}"'
-        ) from exc
-    return group.parse(identified)

@@ -4,8 +4,8 @@ from pathlib import Path
 import pytest
 from pytest import raises
 
-from spat.formats import snip
-from spat.types import Extrema, Extremum, ExtremumType, Wave
+from spat.basic import Extrema, Extremum, ExtremumType, Wave
+from spat.snipdb import SnipDb
 
 
 def test_snip(fs) -> None:
@@ -70,7 +70,7 @@ def test_snip(fs) -> None:
     )
     fs.add_real_file("beat.wav", target_path="project.snip/data/part0.wav")
 
-    project = snip.from_dir(Path("project.snip"))
+    project = SnipDb.from_dir(Path("project.snip"))
     extrema_part = project.get(
         Extrema, name="part0", settings="production", id=32, user="1000"
     )

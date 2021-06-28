@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Iterable, TypeVar
 
 from pydantic.fields import Field
 from pydantic.main import BaseModel
 
+from ...utility import find_duplicates
 from ._snip_attribute_declaration_map import SnipAttributeDeclarationMap
 from ._snip_attributes import SnipAttribute
 
@@ -14,6 +14,8 @@ SnipAttributeMap = dict[str, SnipAttribute]
 
 
 class SnipPartMetadata(BaseModel):
+    """Metadata (name, attributes) for a snip part (parsed file)."""
+
     name: str
     attributes: SnipAttributeMap = Field(default_factory=dict)
 
@@ -38,22 +40,22 @@ class SnipPartMetadata(BaseModel):
         #   ("diff--site0--hf--im", ".wav-meta.json")
         rest, _ = split_at_suffixes(file_name)
         # Get name and attribytes
-        name, raw_attributes = extract_raw_attribute(rest)
+        name, raw_attributes = _extract_raw_attribute(rest)
         # Parse raw attributes
-        attributes = dict(attribute_declarations.parse_strings(raw_attributes))
+        attributes = dict(attribute_declarations.parse_raw_attributes(raw_attributes))
         return cls(name=name, attributes=attributes)
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
         frozen = True
 
 
-def extract_raw_attribute(rest: str) -> tuple[str, frozenset[str]]:
+def _extract_raw_attribute(rest: str) -> tuple[str, frozenset[str]]:
     parts = rest.split("--")
     assert parts, "There is always at least one element after a `split`"
     # The name is the first part
     name = parts.pop(0)
     # The remaining parts are the attributes
-    duplicates = tuple(get_duplicates(parts))
+    duplicates = tuple(find_duplicates(parts))
     # We don't allow duplicates
     if duplicates:
         raise ValueError(f"We don't allow duplicate attributes: {duplicates}")
@@ -61,26 +63,10 @@ def extract_raw_attribute(rest: str) -> tuple[str, frozenset[str]]:
     return (name, raw_attributes)
 
 
-T = TypeVar("T")
-
-
-def get_duplicates(data: Iterable[T]) -> Iterable[T]:
-    """Return the duplicates in the given data.
-
-    Total worst-case run-time: O(n*log(n))
-    """
-    seen = set()
-    for datum in data:  # O(n)
-        if datum in seen:
-            yield datum
-        seen.add(datum)  # O(log(n))
-
-
 def split_at_suffixes(file_name: str) -> tuple[str, tuple[str, ...]]:
     """Split into (rest, suffixes).
 
     Examples:
-
         split_at_suffixes("source.tar.gz")  == ("source", (".tar", ".gz"))
         split_at_suffixes("source.tar.gz.") == ('source.tar.gz.', ())
         split_at_suffixes(".tar.gz")        == (".tar", (".gz",))

@@ -1,11 +1,13 @@
 import wave
-from typing import Any, BinaryIO, Protocol, Type, TypeVar
+from typing import BinaryIO, Protocol, Type, TypeVar
 
 from .._errors import SpatError
 
 
-class _InitProtocol(Protocol):
-    def __init__(self, __byte_depth: int, __time_step_ns: int, __data: bytes) -> None:
+class _InitProtocol(Protocol):  # pylint: disable=too-few-public-methods
+    def __init__(  # pylint: disable=super-init-not-called
+        self, __byte_depth: int, __time_step_ns: int, __data: bytes
+    ) -> None:
         ...
 
 
@@ -13,13 +15,14 @@ T = TypeVar("T", bound=_InitProtocol)
 
 
 class SpatWaveError(SpatError, wave.Error):
-    pass
+    """Raised if the WAVE parser fails."""
 
 
 _ONE_SECOND_IN_NANOSECONDS = int(1e9)
 
 
 def from_io(type_: Type[T], io: BinaryIO) -> T:
+    """Construct instance of the given type based on a binary IO stream."""
     # Metadata
     try:
         reader = wave.Wave_read(io)

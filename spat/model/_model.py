@@ -13,7 +13,7 @@ Derived = TypeVar("Derived", bound="Model")
 class Model(BaseModel):
     """Immutable pydantic model with auto-generated serialization/deserialization."""
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
         frozen = True
 
     # Override this media type list in a derived class to enable the

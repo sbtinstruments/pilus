@@ -8,12 +8,16 @@ from ..model import Model
 
 
 class ExtremumType(Enum):
+    """An extremum can either be a minimum or a maximum."""
+
     # Assign values for serialization purposes
     MINIMUM = "minimum"
     MAXIMUM = "maximum"
 
 
 class Extremum(Model):
+    """Time-indexed extremum with floating-point value."""
+
     time_point: datetime
     value: float
     type_: ExtremumType

@@ -1,20 +1,37 @@
 from pathlib import Path
-from typing import Any, Dict, Iterable
+from typing import Any, Iterable, Protocol, Type, TypeVar
 
-from ...types import Box, Snip, SnipAttributeDeclarationMap, SnipPart, SnipPartMetadata
 from .. import box as box_format
+from ..box import Box
 from ._errors import SnipError
+from ._snip_attribute_declaration_map import SnipAttributeDeclarationMap
+from ._snip_part import SnipPart
+from ._snip_part_metadata import SnipPartMetadata
 
 
-def from_dir(root: Path) -> Snip:
+class _InitProtocol(Protocol):  # pylint: disable=too-few-public-methods
+    def __init__(  # pylint: disable=super-init-not-called
+        self,
+        __parts: Iterable[SnipPart[Any]],
+        __attribute_declarations: SnipAttributeDeclarationMap,
+    ) -> None:
+        ...
+
+
+T = TypeVar("T", bound=_InitProtocol)
+
+
+def from_dir(type_: Type[T], root: Path) -> T:
+    """Construct instance of the given type based on a directory."""
     try:
         box = box_format.from_dir(root)
     except box_format.BoxError as exc:
         raise SnipError(f"Could not read box format: {str(exc)}") from exc
-    return from_box(box)
+    return from_box(type_, box)
 
 
-def from_box(box: Box) -> Snip:
+def from_box(type_: Type[T], box: Box) -> T:
+    """Construct instance of the given type based on a box."""
     box_parts = dict(box.items())
 
     try:
@@ -28,7 +45,8 @@ def from_box(box: Box) -> Snip:
         data = box_parts.pop("data")
     except KeyError as exc:
         raise SnipError('Could not find the "data" directory') from exc
-    if not isinstance(data, Box):
+    # `Box` is an `immutables.Map` which mypy has some troubles with.
+    if not isinstance(data, Box):  # type: ignore[misc]
         raise SnipError('The "data" entry is not a directory')
 
     snip_parts = _resolve_parts(data, attribute_declarations=attribute_declarations)
@@ -38,14 +56,15 @@ def from_box(box: Box) -> Snip:
         key = next(iter(box_parts))
         raise SnipError(f'Unexpected entry "{key}"')
 
-    return Snip(snip_parts, attribute_declarations)
+    return type_(snip_parts, attribute_declarations)
 
 
 def _resolve_parts(
     box: Box, *, attribute_declarations: SnipAttributeDeclarationMap
 ) -> Iterable[SnipPart[Any]]:
     for key, box_item in box.items():
-        if isinstance(box_item, Box):
+        # `Box` is an `immutables.Map` which mypy has some troubles with.
+        if isinstance(box_item, Box):  # type: ignore[misc]
             raise SnipError(
                 f'Unexpected sub-directory inside the data directory: "{key}"'
             )

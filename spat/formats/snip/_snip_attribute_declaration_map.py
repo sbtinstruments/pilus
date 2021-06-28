@@ -28,9 +28,11 @@ class SnipAttributeDeclarationMap(Model):
 
     @property
     def enums(self) -> Iterable[tuple[str, SnipEnumDeclaration]]:
+        """Return all (name, enum) pairs."""
         return _get_enums(self.__root__)
 
     def parse_kwargs(self, **kwargs: str) -> Iterable[tuple[str, SnipAttribute]]:
+        """Return of all (name, attribute) pairs based on the kwargs."""
         for name, value in kwargs.items():
             # Find type
             try:
@@ -55,12 +57,14 @@ class SnipAttributeDeclarationMap(Model):
                     )
                 yield (name, SnipEnum(type=type_.type_, value=value))
 
-    def parse_strings(
+    def parse_raw_attributes(
         self, raw_attributes: Iterable[str]
     ) -> Iterable[tuple[str, SnipAttribute]]:
-        return (self.parse_string(s) for s in raw_attributes)
+        """Return all (name, attribute) pairs based on the raw string attributes."""
+        return (self.parse_raw_attribute(s) for s in raw_attributes)
 
-    def parse_string(self, raw_attribute: str) -> tuple[str, SnipAttribute]:
+    def parse_raw_attribute(self, raw_attribute: str) -> tuple[str, SnipAttribute]:
+        """Return a (name, attribute) pair based on the raw string attribute."""
         parts = raw_attribute.split("=")
         len_parts = len(parts)
         # If there is no attribute name, we assume that the attribute is an enum.
@@ -95,13 +99,17 @@ class SnipAttributeDeclarationMap(Model):
         raise ValueError(f'Could not parse attribute: "{raw_attribute}"')
 
     def get_enum_name_from_value(self, value: str) -> Optional[str]:
+        """Return the name of the enum that corresponds to the given value."""
         for name, enum in self.enums:
             if value in enum.values:
                 return name
         return None
 
     @validator("__root__")
-    def enum_values_are_globally_unique(cls, v: _RootType) -> _RootType:  # [1]
+    def enum_values_are_globally_unique(  # pylint: disable=no-self-argument,no-self-use
+        cls, v: _RootType
+    ) -> _RootType:  # [1]
+        """Ensure that there are no enum value conflicts."""
         values = tuple(_get_enum_values(v))
         if len(values) != len(frozenset(values)):
             raise ValueError("Enum values are not globally unique")

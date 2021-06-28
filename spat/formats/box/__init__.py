@@ -1,2 +1,2 @@
-from ._box import from_dir, from_file
+from ._box import Box, MissingParserPolicy, from_dir
 from ._errors import BoxError

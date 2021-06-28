@@ -8,8 +8,10 @@ T = TypeVar("T")
 
 
 class SnipPart(BaseModel, Generic[T]):
+    """Part (parsed file) of a snip."""
+
     value: T
     metadata: SnipPartMetadata
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
         frozen = True

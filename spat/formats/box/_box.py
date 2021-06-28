@@ -2,9 +2,11 @@ import logging
 from enum import Enum, unique
 from pathlib import Path
 from typing import Any, Optional
-from zipfile import ZipFile
 
-from ...types import Box, BoxValue
+# We explicitly import the `_map` file to get the proper typing (corresponding to the
+# `_map.pyi` file).
+from immutables import Map
+
 from .._parser_map import (
     IdentifiedData,
     IdentifiedIo,
@@ -15,21 +17,27 @@ from .._parser_map import (
 from ._errors import BoxError
 from ._manifest import Manifest
 
+# from zipfile import ZipFile
+
+
 _LOGGER = logging.getLogger(__name__)
-
-
 _MANIFEST_PATH = Path("manifest.json")
+
+Box = Map[str, Any]
 
 
 @unique
 class MissingParserPolicy(Enum):
+    """What to do when there is no parser for a media type."""
+
     STORE_DATA = "store-data"
     STORE_METADATA = "store-metadata"
 
 
-def from_file(file: Path) -> Box:
-    with ZipFile(file) as zf:
-        pass
+# TODO: Add a ZIP-based loader
+# def from_file(file: Path) -> Box:
+#     with ZipFile(file) as zf:
+#         pass
 
 
 def from_dir(
@@ -39,6 +47,11 @@ def from_dir(
     root: Optional[Path] = None,
     manifest: Optional[Manifest] = None,
 ) -> Box:
+    """Return box based on the directory.
+
+    Automatically parses the files in the directory based on the currently registered
+    parsers.
+    """
     # Default arguments
     if missing_parser_policy is None:
         missing_parser_policy = MissingParserPolicy.STORE_METADATA
@@ -54,7 +67,7 @@ def from_dir(
         # Filter out the manifest file from the children
         children.remove(manifest_path)
     # Resolve the children in the directory
-    resolved_children: dict[str, BoxValue] = {
+    resolved_children: dict[str, Any] = {
         c.name: _resolve_child(
             c,
             missing_parser_policy=missing_parser_policy,
@@ -69,7 +82,7 @@ def from_dir(
 def _resolve_child(
     child: Path,
     **kwargs: Any,
-) -> BoxValue:
+) -> Any:
     # Recurse into sub-directory
     if child.is_dir():
         return from_dir(child, **kwargs)
@@ -89,7 +102,7 @@ def _identify_and_parse_file(
     missing_parser_policy: MissingParserPolicy,
     root: Path,
     manifest: Manifest,
-) -> BoxValue:
+) -> Any:
     """Identify file type using the manifest."""
     media_type = _get_media_type(file, root=root, manifest=manifest)
     with file.open("rb") as io:

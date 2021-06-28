@@ -36,11 +36,14 @@ profile = 'black'
 
 [tool.pylint.master]
 # i,j,k: You can use this for an integer index in a loop.
+# v:  You can use this for pydantic `@validator` functions.
 # fs: We use this in the tests to get a pyfakefs file system reference.
 #     Since pytest's dependency injection is name based, we have to use
 #     this exact argument name.
 # tg: You can use this for an `anyio.TaskGroup`.
-good-names = 'i,j,k,fs,tg' # Default is 'i,j,k,ex,Run,_'
+# io: You can use this for `typing.BinaryIO` (and friends).
+# T,U,V: For `TypeVar`s
+good-names = 'i,j,k,v,fs,tg,io,T,U,V' # Default is 'i,j,k,ex,Run,_'
 # Increase the default values a bit. Yes, this may hurt maintainability
 # ever so slightly but it increases the speed of development.
 max-args = '7' # Default is 5
@@ -85,3 +88,7 @@ disable = '''
   missing-class-docstring,
   missing-function-docstring,
 '''
+
+# Whitelist some extensions that pylint has troubles with.
+# pydantic: See https://github.com/samuelcolvin/pydantic/issues/1961
+extension-pkg-whitelist = 'pydantic'

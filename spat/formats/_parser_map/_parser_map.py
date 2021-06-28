@@ -14,21 +14,34 @@ from ._identified_data import (
 
 
 class SpatNoParserError(SpatError):
-    pass
+    """Raised when we can't find a parser for a given media type."""
 
 
-class FileParser(Protocol):
-    def __call__(self, __file: Path) -> Any:
+class DirParser(Protocol):  # pylint: disable=too-few-public-methods
+    """Callable that parses a directory and returns a corresponding object."""
+
+    def __call__(self, __root: Path) -> Any:  # noqa: D102
         ...
 
 
-class DataParser(Protocol):
-    def __call__(self, __data: bytes) -> Any:
+class FileParser(Protocol):  # pylint: disable=too-few-public-methods
+    """Callable that parses a file and returns a corresponding object."""
+
+    def __call__(self, __file: Path) -> Any:  # noqa: D102
         ...
 
 
-class IoParser(Protocol):
-    def __call__(self, __io: BinaryIO) -> Any:
+class DataParser(Protocol):  # pylint: disable=too-few-public-methods
+    """Callable that parses binary data and returns a corresponding object."""
+
+    def __call__(self, __data: bytes) -> Any:  # noqa: D102
+        ...
+
+
+class IoParser(Protocol):  # pylint: disable=too-few-public-methods
+    """Callable that parses an IO stream and returns a corresponding object."""
+
+    def __call__(self, __io: BinaryIO) -> Any:  # noqa: D102
         ...
 
 
@@ -74,13 +87,20 @@ def generate_io_parser(data_parser: DataParser) -> IoParser:
 
 @dataclass(frozen=True)
 class ParserGroup:
+    """Group of parsers and utilities to auto-generate missing parsers."""
+
+    from_dir: Optional[FileParser] = None
     from_file: Optional[FileParser] = None
     from_io: Optional[IoParser] = None
     from_data: Optional[DataParser] = None
 
     def is_empty(self) -> bool:
+        """Are there no parsers in this group."""
         return (
-            self.from_file is None and self.from_io is None and self.from_data is None
+            self.from_dir is None
+            and self.from_file is None
+            and self.from_io is None
+            and self.from_data is None
         )
 
     def merge(self, other: ParserGroup) -> ParserGroup:
@@ -88,16 +108,19 @@ class ParserGroup:
 
         Raises `ValueError` on conflict.
         """
+        if self.from_dir is not None and other.from_dir is not None:
+            raise ValueError("There already is a directory parser in this group")
         if self.from_file is not None and other.from_file is not None:
             raise ValueError("There already is a file parser in this group")
         if self.from_io is not None and other.from_io is not None:
             raise ValueError("There already is an IO parser in this group")
         if self.from_data is not None and other.from_data is not None:
             raise ValueError("There already is a data parser in this group")
+        from_dir = self.from_dir if self.from_dir is not None else other.from_dir
         from_file = self.from_file if self.from_file is not None else other.from_file
         from_io = self.from_io if self.from_io is not None else other.from_io
         from_data = self.from_data if self.from_data is not None else other.from_data
-        return ParserGroup(from_file, from_io, from_data)
+        return ParserGroup(from_dir, from_file, from_io, from_data)
 
     def auto_from_file(self) -> FileParser:
         """Generate and return a file parser if it is missing."""
@@ -124,27 +147,36 @@ class ParserGroup:
 
         We prioritize the parsers as follows (highest priority first):
 
-          1. `from_file`
+          1. `from_dir` and `from_file`
           2. `from_io`
           3. `from_data`
 
-        Note that both `from_file` and `from_io` can potentially skip unused data and
-        thus avoid memory bloat. In contrast, `file_data` works on in-memory data so
-        we already bloated the memory with potentially unused data.
+        Note that both `from_dir`, `from_file` and `from_io` can potentially skip
+        unused data and thus avoid memory bloat. In contrast, `file_data` works
+        on in-memory data so we already bloated the memory with potentially unused data.
 
         We auto-generate `from_file` and `from_io` if they are missing. Note that
         the auto auto-generated `from_io` simply call `from_data` and thus provide no
         potential memory savings. It's merely a convenience wrapper.
         """
-        # Resource is a path. We assume that the path points to a file and
-        # use `from_file` to parse it. We auto-generate `from_file` if it's
-        # missing.
+        # Resource is a path. If the path points to a directory, we use `from_dir` to
+        # parse it. If the path points to a file, we use `from_file` to parse it.
+        # We auto-generate `from_file` if it's missing.
         if isinstance(identified, IdentifiedPath):
-            # For now, we only support file paths
-            if not identified.path.is_file():
-                raise ValueError("Path resource does not point to a file")
-            from_file = self.auto_from_file()
-            return from_file(identified.path)
+            # Directory
+            if identified.path.is_dir():
+                if self.from_dir is None:
+                    raise SpatNoParserError(
+                        "No registered directory parser found for media "
+                        f'type "{identified.media_type}"'
+                    )
+                return self.from_dir(identified.path)
+            # File
+            if identified.path.is_file():
+                from_file = self.auto_from_file()
+                return from_file(identified.path)
+            # Other
+            raise ValueError("Path resource does not point to a directory or file")
         # Resource is an IO stream. We use `from_io` to parse it. We auto-generate
         # `from_io` if it's missing.
         if isinstance(identified, IdentifiedIo):
@@ -168,12 +200,13 @@ _MEDIA_TYPE_TO_PARSER_GROUP: dict[str, ParserGroup] = dict()
 def register_parsers(
     media_type: str,
     *,
+    from_dir: Optional[DirParser] = None,
     from_file: Optional[FileParser] = None,
     from_io: Optional[IoParser] = None,
     from_data: Optional[DataParser] = None,
 ) -> None:
     """Use the parsers for the given media type."""
-    group = ParserGroup(from_file, from_io, from_data)
+    group = ParserGroup(from_dir, from_file, from_io, from_data)
     register_parser_group(media_type, group)
 
 

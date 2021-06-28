@@ -24,7 +24,7 @@ def add_media_type(media_type: str) -> Callable[[Type[T]], Type[T]]:
                 "JSON-suffixed media type"
             )
 
-        class _Decorated(cls):
+        class _Decorated(cls):  # type: ignore[valid-type,misc]  # pylint: disable=too-few-public-methods
             # When we add the media type to the list, the
             # serialization/deserialization methods start to work.
             media_types = cls.media_types + (media_type,)

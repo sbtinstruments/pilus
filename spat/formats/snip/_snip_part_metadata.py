@@ -43,7 +43,7 @@ class SnipPartMetadata(BaseModel):
         name, raw_attributes = _extract_raw_attribute(rest)
         # Parse raw attributes
         attributes: SnipAttributeMap = Map(
-            **dict(attribute_declarations.parse_raw_attributes(raw_attributes))
+            attribute_declarations.parse_raw_attributes(raw_attributes)
         )
         return cls(name=name, attributes=attributes)
 

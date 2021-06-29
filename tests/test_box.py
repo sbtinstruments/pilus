@@ -4,7 +4,8 @@ from pathlib import Path
 from immutables import Map
 from pyfakefs.fake_filesystem import FakeFilesystem
 
-from spat.formats import IdentifiedResource, box
+from spat.formats import box
+from spat.formats.registry import IdentifiedResource
 
 
 def test_zip_as_box(fs: FakeFilesystem) -> None:

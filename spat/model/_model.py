@@ -24,7 +24,7 @@ class Model(BaseModel):
 
     @classmethod
     def from_file(cls: Type[Derived], file: Path) -> Derived:
-        """Create instance based on the given file.
+        """Deserialize file into an instance of this class.
 
         This method is disabled by default. You can enable it if you associate this
         class with a media type. E.g., via the `add_media_type` decorator.
@@ -37,7 +37,7 @@ class Model(BaseModel):
 
     @classmethod
     def from_json(cls: Type[Derived], resource: Resource) -> Derived:
-        """Create instance based on the given resource (file, IO stream, data, etc.).
+        """Deserialize resource (file, IO stream, data) into an instance of this class.
 
         This method is disabled by default. You can enable it if you associate this
         class with a media type. E.g., via the `add_media_type` decorator.

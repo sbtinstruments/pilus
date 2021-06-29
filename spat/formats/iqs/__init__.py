@@ -1,1 +1,1 @@
-from ._iqs import load
+from ._iqs import from_io

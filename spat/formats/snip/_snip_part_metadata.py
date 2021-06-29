@@ -50,7 +50,7 @@ class SnipPartMetadata(BaseModel):
     class Config:  # pylint: disable=too-few-public-methods
         frozen = True
         # For `immutables.Map`
-        # TODO: Can we use a validator instead?
+        # TODO: Add validator instead when pydantic supports custom data types.
         arbitrary_types_allowed = True
 
 

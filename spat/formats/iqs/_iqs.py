@@ -1,96 +1,55 @@
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Dict
+from dataclasses import dataclass
+from datetime import timedelta
+from typing import BinaryIO, Optional
 
-from ...types import Snip
-from ._utils import (
-    _get_file_size,
-    _parse_iqs_channels,
-    _read_chunk_type,
-    _read_idat,
-    _read_ihdr,
-    _read_signature,
-    _read_sysi,
-    _write_idat,
-    _write_ihdr,
-    _write_signature,
-    _write_sysi,
-    read_uint32,
-)
+from ._chunks import IdatChunk, IhdrChunk, read_chunk
+from ._signature import read_and_validate_signature
 
 
-def from_iqs():
-    """Create snip from iqs file."""
-    print("from iqs")
+@dataclass(frozen=True)
+class Iqs:
+    """Raw IQS chunks."""
+
+    ihdr: IhdrChunk
+    idat: IdatChunk
 
 
-def open_iqs(file_name: str):
-    """Read V2 IQS file."""
-    iqs: dict = {}
-    iqs["IDAT"] = []
+def from_io(io: BinaryIO) -> Optional[Iqs]:
+    """Deserialize IO stream into an IQS instance.
 
-    fileSize = _get_file_size(file_name)
+    Supports version 2 of the IQS specification.
 
-    with open(file_name, "r+b") as f:
-        assert _read_signature(f) == "894951530d0a1a0a"
+    May raise `IqsError`.
 
-        while f.tell() != fileSize:
-            chunk_length = read_uint32(f)
-            chunk_type = _read_chunk_type(f)
-
-            if chunk_type == "sYSI":
-                iqs["sys_info"] = _read_sysi(f, chunk_length)
-            elif chunk_type == "IHDR":
-                iqs["IHDR"] = _read_ihdr(f)
-            elif chunk_type == "IDAT":
-                iqs["IDAT"].append(_read_idat(f, iqs["IHDR"]))
-            else:
-                f.seek(chunk_length + 4)
-                Warning("Unknown chunk type. Skipping.")
-                pass  # error
-
-    _parse_iqs_channels(iqs)
-    return iqs
-
-
-def write_iqs(iqs, file_name: str) -> bool:
-    """Write v2.0 iqs file."""
-    with open(file_name, "w+b") as f:
-        _write_signature(f)
-        _write_sysi(f, iqs)
-        _write_ihdr(f, iqs)
-        _write_idat(f, iqs)
-
-    return True
+    Merges all IDAT chunks into a single IDAT chunk. This way, all the raw binary
+    data is contiguous.
+    """
+    read_and_validate_signature(io)
+    ihdr: Optional[IhdrChunk] = None
+    idats: list[IdatChunk] = list()
+    while chunk := read_chunk(io, ihdr=ihdr):
+        # Save the IHDR chunk so that we can pass it to `read_chunk`
+        # in the subsequent iterations. We use it internally to deserialize
+        # the IDAT chunk(s).
+        if isinstance(chunk, IhdrChunk):
+            ihdr = chunk
+        # Store all data chunks
+        elif isinstance(chunk, IdatChunk):
+            idats.append(chunk)
+    # The IQS file contained no data
+    if ihdr is None or not idats:
+        return None
+    # Merge all data together
+    merged_idat = IdatChunk.merge_all(*idats, ihdr=ihdr)
+    return Iqs(ihdr, merged_idat)
 
 
-def load(file_path: Path, delimiter: str = "__") -> Snip:
-    """Load IQS file into it's snip representation."""
-    raw_iqs = open_iqs(str(file_path))
-    for key, val in raw_iqs["data"]["site1"]["lf"].items():
-        print(f"key:{key} type(val):{type(val)}")
+# def write_iqs(iqs, file_name: str) -> bool:
+#     """Write v2.0 iqs file."""
+#     with open(file_name, "w+b") as f:
+#         _write_signature(f)
+#         _write_sysi(f, iqs)
+#         _write_ihdr(f, iqs)
+#         _write_idat(f, iqs)
 
-    # TODO: Ensure that these values actually are the same across sites and channels.
-    time_step_ns = raw_iqs["IHDR"]["site0"]["hf"]["time_step"]
-    byte_depth = raw_iqs["IHDR"]["site0"]["hf"]["sample_byte_depth"]
-    max_value = raw_iqs["IHDR"]["site0"]["hf"]["sample_max_signal_amplitude"]
-
-    channels: Dict[str, Channel] = {}
-
-    for site_name, site in raw_iqs["data"].items():
-        for freq_name, freq in site.items():
-            for part_name, part in freq.items():
-                channel_name = delimiter.join((site_name, freq_name, part_name))
-                print(f"== channel_name:{channel_name}")
-                print(f"== channel:{part}")
-
-                # channels[channel_name] = channel
-
-    myqs = raw_iqs
-    for __, site in myqs["data"].items():
-        for __, freq in site.items():
-            pass
-
-    # time_step =
-
-    return Snip(time_step_ns)
+#     return True

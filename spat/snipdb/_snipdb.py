@@ -168,14 +168,14 @@ class SnipDb:
 
     @classmethod
     def from_dir(cls, root: Path) -> SnipDb:
-        """Construct instance based on a directory."""
+        """Parse directory into an instance of this class."""
         if root.suffix == ".snip":
             return cls.from_snip_dir(root)
         raise ValueError("Can't determine media type from directory alone")
 
     @classmethod
     def from_snip_dir(cls, root: Path) -> SnipDb:
-        """Construct instance based on a snip directory."""
+        """Parse snip directory into an instance of this class."""
         return snip.from_dir(SnipDb, root)
 
     def __iter__(self) -> Iterable[SnipPart[Any]]:

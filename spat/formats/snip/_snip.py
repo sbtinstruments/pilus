@@ -23,7 +23,7 @@ T = TypeVar("T", bound=_InitProtocol)
 
 
 def from_dir(type_: Type[T], root: Path) -> T:
-    """Construct instance of the given type based on a directory."""
+    """Parse directory into an instance of the given type."""
     try:
         box = box_format.from_dir(root)
     except box_format.BoxError as exc:
@@ -32,7 +32,7 @@ def from_dir(type_: Type[T], root: Path) -> T:
 
 
 def from_box(type_: Type[T], box: Box) -> T:
-    """Construct instance of the given type based on a box."""
+    """Parse box into an instance of the given type."""
     box_parts = dict(box.items())
 
     try:

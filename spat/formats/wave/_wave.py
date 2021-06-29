@@ -22,7 +22,7 @@ _ONE_SECOND_IN_NANOSECONDS = int(1e9)
 
 
 def from_io(type_: Type[T], io: BinaryIO) -> T:
-    """Construct instance of the given type based on a binary IO stream."""
+    """Deserialize IO stream into an instance of the given type."""
     # Metadata
     try:
         reader = wave.Wave_read(io)

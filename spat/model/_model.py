@@ -5,7 +5,8 @@ from typing import ClassVar, Type, TypeVar, cast
 
 from pydantic import BaseModel
 
-from ..formats import Resource, SpatError, parse
+from ..formats import SpatError
+from ..formats.registry import Resource, parse
 
 Derived = TypeVar("Derived", bound="Model")
 

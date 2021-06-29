@@ -7,10 +7,10 @@ from ._parser_group import ParserGroup
 from ._resource import IdentifiedResource
 
 # Global dict of all registered parsers
-_MEDIA_TYPE_TO_PARSER_GROUP: dict[str, ParserGroup] = dict()
+_PARSERS: dict[str, ParserGroup] = dict()
 
 
-def register_parsers(
+def add_parsers(
     media_type: str,
     *,
     from_dir: Optional[DirParser] = None,
@@ -18,23 +18,28 @@ def register_parsers(
     from_io: Optional[IoParser] = None,
     from_data: Optional[DataParser] = None,
 ) -> None:
-    """Use the parsers for the given media type."""
+    """Add the given parsers to the global registry.
+
+    This associates the given media type with the parsers. In other words,
+    the `parse` function invokes the parser when it comes across the corresponding
+    media type.
+    """
     group = ParserGroup(from_dir, from_file, from_io, from_data)
-    register_parser_group(media_type, group)
+    add_parser_group(media_type, group)
 
 
-def register_parser_group(media_type: str, group: ParserGroup) -> None:
-    """Use the parser group for the given media type."""
+def add_parser_group(media_type: str, group: ParserGroup) -> None:
+    """Add the given parser group to the global registry."""
     if group.is_empty():
         raise ValueError("You must specify at least one parser")
     # If there is no existing group, we simply assign the given group
     try:
-        existing_group = _MEDIA_TYPE_TO_PARSER_GROUP[media_type]
+        existing_group = _PARSERS[media_type]
     except KeyError:
-        _MEDIA_TYPE_TO_PARSER_GROUP[media_type] = group
+        _PARSERS[media_type] = group
         return
     # Otherwise, we attempt to merge the two groups and use the result
-    _MEDIA_TYPE_TO_PARSER_GROUP[media_type] = existing_group.merge(group)
+    _PARSERS[media_type] = existing_group.merge(group)
 
 
 def parse(media_type: str, resource: Union[Path, BinaryIO, bytes]) -> Any:
@@ -46,7 +51,7 @@ def parse(media_type: str, resource: Union[Path, BinaryIO, bytes]) -> Any:
 def parse_identified(identified: IdentifiedResource) -> Any:
     """Parse the given identified resource (known media type)."""
     try:
-        group = _MEDIA_TYPE_TO_PARSER_GROUP[identified.media_type]
+        group = _PARSERS[identified.media_type]
     except KeyError as exc:
         raise SpatNoParserError(
             f'No parser found for media type: "{identified.media_type}"'

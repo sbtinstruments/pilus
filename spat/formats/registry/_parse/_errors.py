@@ -1,4 +1,4 @@
-from .._errors import SpatError
+from ..._errors import SpatError
 
 
 class SpatNoParserError(SpatError):

@@ -11,7 +11,7 @@ from typeguard import check_type
 
 from spat.formats import snip
 
-from ..formats import register_parsers
+from ..formats.registry import add_parsers
 from ..formats.snip import (
     SnipAttribute,
     SnipAttributeDeclarationMap,
@@ -191,7 +191,7 @@ def _doc_to_part(document: dict[str, Any]) -> SnipPart[Any]:
     return SnipPart(value=value, metadata=metadata)
 
 
-register_parsers(SnipDb.snip_media_type, from_dir=SnipDb.from_snip_dir)
+add_parsers(SnipDb.snip_media_type, from_dir=SnipDb.from_snip_dir)
 
 
 #   ## Raw data

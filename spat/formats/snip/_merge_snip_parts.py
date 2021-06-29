@@ -1,7 +1,7 @@
 from collections import defaultdict
 from typing import Any, Iterable
 
-from .._merge import MERGERS
+from ..registry import get_merger
 from ._snip_part import SnipPart
 from ._snip_part_metadata import SnipPartMetadata
 
@@ -28,9 +28,8 @@ def merge_snip_parts(parts: Iterable[SnipPart[Any]]) -> Iterable[SnipPart[Any]]:
             continue
         # We merge parts based on their type. See if we can find a compatible merger.
         part_types = frozenset(type(part.value) for part in part_list)
-        try:
-            merger = MERGERS[part_types]
-        except KeyError:
+        merger = get_merger(part_types)
+        if merger is None:
             # There is no compatible merger. Simply yield the parts as-is.
             yield from part_list
             continue

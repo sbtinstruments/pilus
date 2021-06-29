@@ -7,7 +7,7 @@ from typing import Any, Optional
 # `_map.pyi` file).
 from immutables import Map
 
-from .._parse import IdentifiedResource, Resource, SpatNoParserError, parse
+from ..registry import IdentifiedResource, Resource, SpatNoParserError, parse
 from ._errors import BoxError
 from ._manifest import Manifest
 

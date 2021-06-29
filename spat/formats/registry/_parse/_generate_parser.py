@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any, BinaryIO
 
-from .._errors import SpatOSError
+from ..._errors import SpatOSError
 from ._parser import DataParser, FileParser, IoParser
 
 

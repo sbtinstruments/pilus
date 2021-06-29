@@ -1,7 +1,7 @@
 from typing import Callable, Type, TypeVar
 
-from ..formats import register_parsers
 from ..formats.json import from_json_data
+from ..formats.registry import add_parsers
 from ._model import Model
 
 T = TypeVar("T", bound=Model)
@@ -34,8 +34,8 @@ def add_media_type(media_type: str) -> Callable[[Type[T]], Type[T]]:
         _Decorated.__doc__ = cls.__doc__
         # Create JSON data parser
         from_data = lambda data: from_json_data(_Decorated, data)
-        # Register the parser for the media type
-        register_parsers(media_type, from_data=from_data)
+        # Add the parser for the media type to the global registry
+        add_parsers(media_type, from_data=from_data)
 
         return _Decorated
 

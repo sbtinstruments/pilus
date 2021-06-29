@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from inspect import Signature, signature
 from typing import Any, Callable, get_type_hints
 
-from ...utility import find_duplicates
+from ....utility import find_duplicates
 
 MergeFunc = Callable[[Any, Any], Any]
 

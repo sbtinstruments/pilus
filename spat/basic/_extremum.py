@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Tuple
 
 from ..formats.json import from_json_data
-from ..formats.registry import add_parsers
+from ..formats.registry import add_deserializer
 from ..model import Model
 
 
@@ -26,7 +26,7 @@ class Extremum(Model):
 Extrema = Tuple[Extremum, ...]
 
 
-add_parsers(
+add_deserializer(
     "application/vnd.sbt.extrema+json",
     from_data=lambda data: from_json_data(Extrema, data),
 )

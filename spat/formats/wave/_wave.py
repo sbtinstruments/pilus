@@ -15,7 +15,7 @@ T = TypeVar("T", bound=_InitProtocol)
 
 
 class SpatWaveError(SpatError, wave.Error):
-    """Raised if the WAVE parser fails."""
+    """Raised if the WAVE deserializer fails."""
 
 
 _ONE_SECOND_IN_NANOSECONDS = int(1e9)
@@ -27,7 +27,7 @@ def from_io(type_: Type[T], io: BinaryIO) -> T:
     try:
         reader = wave.Wave_read(io)
     except wave.Error as exc:
-        raise SpatWaveError(f'Could not parse WAVE metadata: "{exc}"') from exc
+        raise SpatWaveError(f'Could not deserialize WAVE metadata: "{exc}"') from exc
     byte_depth = reader.getsampwidth()
     # Check number of channels
     channels = reader.getnchannels()
@@ -53,7 +53,7 @@ def from_io(type_: Type[T], io: BinaryIO) -> T:
         frames = reader.getnframes()
         data = reader.readframes(frames)
     except wave.Error as exc:
-        raise SpatWaveError(f'Could not parse WAVE data: "{exc}"') from exc
+        raise SpatWaveError(f'Could not deserialize WAVE data: "{exc}"') from exc
     # Wrap metadata and data into the given type
     # TODO: TESTING
     data = bytes()

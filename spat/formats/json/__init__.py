@@ -1,1 +1,1 @@
-from ._generic_json_parser import from_json_data
+from ._generic_json_deserializer import from_json_data

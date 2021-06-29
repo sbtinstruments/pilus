@@ -1,2 +1,2 @@
-from ._box import Box, MissingParserPolicy, from_dir
+from ._box import Box, MissingDeserializerPolicy, from_dir
 from ._errors import BoxError

@@ -1,2 +1,8 @@
-from ._merge import add_merger, get_merger
-from ._parse import IdentifiedResource, Resource, SpatNoParserError, add_parsers, parse
+from ._deserializers import (
+    IdentifiedResource,
+    Resource,
+    SpatMissingDeserializerError,
+    add_deserializer,
+    deserialize,
+)
+from ._mergers import add_merger, get_merger

@@ -7,7 +7,12 @@ from typing import Any, Optional
 # `_map.pyi` file).
 from immutables import Map
 
-from ..registry import IdentifiedResource, Resource, SpatNoParserError, parse
+from ..registry import (
+    IdentifiedResource,
+    Resource,
+    SpatMissingDeserializerError,
+    deserialize,
+)
 from ._errors import BoxError
 from ._manifest import Manifest
 
@@ -21,8 +26,8 @@ Box = Map[str, Any]
 
 
 @unique
-class MissingParserPolicy(Enum):
-    """What to do when there is no parser for a media type."""
+class MissingDeserializerPolicy(Enum):
+    """What to do when there is no deserializer for a media type."""
 
     STORE_DATA = "store-data"
     STORE_METADATA = "store-metadata"
@@ -37,18 +42,18 @@ class MissingParserPolicy(Enum):
 def from_dir(
     directory: Path,
     *,
-    missing_parser_policy: Optional[MissingParserPolicy] = None,
+    missing_deserializer_policy: Optional[MissingDeserializerPolicy] = None,
     root: Optional[Path] = None,
     manifest: Optional[Manifest] = None,
 ) -> Box:
     """Return box based on the directory.
 
-    Automatically parses the files in the directory based on the currently registered
-    parsers.
+    Automatically deserializes the files in the directory based on the
+    deserializers in the global registry.
     """
     # Default arguments
-    if missing_parser_policy is None:
-        missing_parser_policy = MissingParserPolicy.STORE_METADATA
+    if missing_deserializer_policy is None:
+        missing_deserializer_policy = MissingDeserializerPolicy.STORE_METADATA
     if root is None:
         root = directory
     if not directory.is_dir():
@@ -64,7 +69,7 @@ def from_dir(
     resolved_children: dict[str, Any] = {
         c.name: _resolve_child(
             c,
-            missing_parser_policy=missing_parser_policy,
+            missing_deserializer_policy=missing_deserializer_policy,
             root=root,
             manifest=manifest,
         )
@@ -80,9 +85,9 @@ def _resolve_child(
     # Recurse into sub-directory
     if child.is_dir():
         return from_dir(child, **kwargs)
-    # Identify and parse file
+    # Identify and deserialize file
     if child.is_file():
-        return _identify_and_parse_file(child, **kwargs)
+        return _identify_and_deserialize_file(child, **kwargs)
     # Raise specific error on symlink
     if child.is_symlink():
         raise BoxError(f"We don't support symlinks: {child}")
@@ -90,25 +95,25 @@ def _resolve_child(
     raise BoxError(f"Unknown child: {child}")
 
 
-def _identify_and_parse_file(
+def _identify_and_deserialize_file(
     file: Path,
     *,
-    missing_parser_policy: MissingParserPolicy,
+    missing_deserializer_policy: MissingDeserializerPolicy,
     root: Path,
     manifest: Manifest,
 ) -> Any:
     """Identify file type using the manifest."""
     media_type = _get_media_type(file, root=root, manifest=manifest)
     try:
-        return parse(media_type, file)
-    except SpatNoParserError:
+        return deserialize(media_type, file)
+    except SpatMissingDeserializerError:
         resource: Resource
-        if missing_parser_policy is MissingParserPolicy.STORE_DATA:
+        if missing_deserializer_policy is MissingDeserializerPolicy.STORE_DATA:
             resource = file.read_bytes()
-        elif missing_parser_policy is MissingParserPolicy.STORE_METADATA:
+        elif missing_deserializer_policy is MissingDeserializerPolicy.STORE_METADATA:
             resource = file
         else:
-            # We cover all `MissingParserPolicy` values
+            # We cover all `MissingDeserializerPolicy` values
             assert False
         return IdentifiedResource(media_type, resource)
 

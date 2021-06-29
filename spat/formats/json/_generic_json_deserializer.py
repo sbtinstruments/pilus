@@ -10,7 +10,7 @@ T = TypeVar("T")
 
 
 def from_json_data(type_: Type[T], data: bytes) -> T:
-    """Return instance of the given type from the binary JSON representation.
+    """Return instance of the given type from the JSON representation.
 
     This is a generic method that works with built-in types and pydantic models.
     """

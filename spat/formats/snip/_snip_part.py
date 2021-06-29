@@ -8,7 +8,7 @@ T = TypeVar("T")
 
 
 class SnipPart(BaseModel, Generic[T]):
-    """Part (parsed file) of a snip."""
+    """Part (deserialized file) of a snip."""
 
     value: T
     metadata: SnipPartMetadata

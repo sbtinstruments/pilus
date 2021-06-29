@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Optional
 
 from ..formats import wave
-from ..formats.registry import add_merger, add_parsers
+from ..formats.registry import add_merger, add_deserializer
 from ._wave_meta import WaveMeta
 
 
@@ -35,5 +35,5 @@ class Wave:
         return len(self.data) // self.byte_depth
 
 
-add_parsers("audio/vnd.wave", from_io=lambda io: wave.from_io(Wave, io))
+add_deserializer("audio/vnd.wave", from_io=lambda io: wave.from_io(Wave, io))
 add_merger(Wave.apply_metadata)

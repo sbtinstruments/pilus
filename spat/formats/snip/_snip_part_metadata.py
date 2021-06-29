@@ -12,7 +12,7 @@ SnipAttributeMap = Map[str, SnipAttribute]
 
 
 class SnipPartMetadata(BaseModel):
-    """Metadata (name, attributes) for a snip part (parsed file)."""
+    """Metadata (name, attributes) for a snip part (deserialized file)."""
 
     name: str
     attributes: SnipAttributeMap = Field(default_factory=dict)

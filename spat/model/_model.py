@@ -6,7 +6,7 @@ from typing import ClassVar, Type, TypeVar, cast
 from pydantic import BaseModel
 
 from ..formats import SpatError
-from ..formats.registry import Resource, parse
+from ..formats.registry import Resource, deserialize
 
 Derived = TypeVar("Derived", bound="Model")
 
@@ -31,7 +31,9 @@ class Model(BaseModel):
         """
         if file.suffix == ".json":
             return cls.from_json(file)
-        raise SpatError('Can only parse JSON files but got extension: "{file.suffix}"')
+        raise SpatError(
+            'Can only deserialize JSON files but got extension: "{file.suffix}"'
+        )
 
     @classmethod
     def from_json(cls: Type[Derived], resource: Resource) -> Derived:
@@ -40,7 +42,7 @@ class Model(BaseModel):
         This method is disabled by default. You can enable it if you associate this
         class with a media type. E.g., via the `add_media_type` decorator.
         """
-        return cast(Derived, parse(cls.json_media_type(), resource))
+        return cast(Derived, deserialize(cls.json_media_type(), resource))
 
     @classmethod
     def json_media_type(cls) -> str:

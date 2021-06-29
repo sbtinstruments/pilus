@@ -32,7 +32,7 @@ class SnipAttributeDeclarationMap(Model):
         return _get_enums(self.__root__)
 
     def parse_kwargs(self, **kwargs: str) -> Iterable[tuple[str, SnipAttribute]]:
-        """Return of all (name, attribute) pairs based on the kwargs."""
+        """Return all (name, attribute) pairs based on the kwargs."""
         for name, value in kwargs.items():
             # Find type
             try:

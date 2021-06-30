@@ -1,9 +1,8 @@
 from dataclasses import dataclass
-from os import SEEK_CUR
 from typing import BinaryIO, Optional, Union
 
 from .._errors import IqsError, IqsMissingDataError
-from .._io_utilities import read_exactly, read_int
+from .._io_utilities import read_int, read_string, skip_data
 from ._idat import IdatChunk, read_idat
 from ._ihdr import IhdrChunk, read_ihdr
 
@@ -19,51 +18,46 @@ Chunk = Union[NonCriticalChunk, IhdrChunk, IdatChunk]
 def read_chunk(io: BinaryIO, *, ihdr: Optional[IhdrChunk] = None) -> Optional[Chunk]:
     """Read IQS chunk.
 
-    May raise `IqsError`.
+    May raise `IqsError` or one of its derivatives.
     """
     # Early out if there is no more data in the IO stream
     chunk_length = _read_chunk_length(io)
     if chunk_length is None:
         return None
-    try:
-        # Read chunk type
-        chunk_type = _read_chunk_type(io)
-        # Read chunk data
-        chunk = _read_chunk_data(io, chunk_type, chunk_length, ihdr=ihdr)
-        # TODO: Implement CRC check
-        # For now, we skip the CRC check
-        io.seek(4, SEEK_CUR)
-        return chunk
-    except (OSError, IqsMissingDataError, ValueError, UnicodeDecodeError) as exc:
-        raise IqsError(f'Could not deserialize chunk: "{exc}"') from exc
+    # Read chunk type
+    chunk_type = _read_chunk_type(io)
+    # Read chunk data
+    chunk = _read_chunk_data(io, chunk_type, chunk_length, ihdr=ihdr)
+    # TODO: Implement CRC check
+    # For now, we skip the CRC check
+    skip_data(io, 4)
+    return chunk
 
 
 def _read_chunk_length(io: BinaryIO) -> Optional[int]:
     """Read chunk length.
 
-    May raise `IqsError`.
+    May raise `IqsError` or one of its derivatives.
     """
     try:
         return read_int(io, 4)
-    except (OSError, ValueError) as exc:
-        raise IqsError(f'Could not read chunk length: "{exc}"') from exc
     except IqsMissingDataError as exc:
         # There is no more data so return `None`
         if exc.number_of_bytes_read == 0:
             return None
         # There is some data but not enough to become a chunk length
         raise IqsError(f'Could not read chunk length: "{exc}"') from exc
+    except IqsError as exc:
+        # Wrap the `IqsError` with some additional context
+        raise IqsError(f'Could not read chunk length: "{exc}"') from exc
 
 
 def _read_chunk_type(io: BinaryIO) -> str:
     """Read the 4-byte chunk ID.
 
-    May raise:
-      * `OSError`
-      * `IqsMissingDataError`
-      * `UnicodeDecodeError` on invalid strings
+    May raise `IqsError` or one of its derivatives.
     """
-    return read_exactly(io, 4).decode()
+    return read_string(io, 4)
 
 
 def _read_chunk_data(
@@ -75,11 +69,7 @@ def _read_chunk_data(
 ) -> Chunk:
     """Read and parse chunk data of the given type and length.
 
-    May raise:
-      * `OSError`
-      * `IqsMissingDataError`
-      * `UnicodeDecodeError` on invalid strings
-      * `ValueError` on invalid strings/integers
+    May raise `IqsError` or one of its derivatives.
     """
     # TODO: Add support for the non-critical "sYSI" (system information) chunk
     # if chunk_type == "sYSI":
@@ -99,7 +89,7 @@ def _read_chunk_data(
         # Raise an error if we can't deserialize a critical chunk
         raise IqsError(f'Encountered unknown critical chunk: "{chunk_type}"')
     # Skip non-critical chunks
-    io.seek(chunk_length, SEEK_CUR)
+    skip_data(io, chunk_length)
     return NonCriticalChunk()
 
 

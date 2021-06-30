@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from os import SEEK_CUR
-from typing import Any, BinaryIO, Optional
+from typing import BinaryIO, Optional
 
 from .._errors import IqsError
-from .._io_utilities import read_exactly, read_fixed_string, read_int
+from .._io_utilities import read_exactly, read_int
 from ._ihdr import IhdrChunk
 
 
@@ -117,7 +116,10 @@ class IdatChunk:
 
 
 def read_idat(io: BinaryIO, *, ihdr: IhdrChunk) -> IdatChunk:
-    """Deserialize the IO stream into an IDAT chunk."""
+    """Deserialize the IO stream into an IDAT chunk.
+
+    May raise `IqsError` or one of its derivatives.
+    """
     timestamp_us = read_int(io, 8)
     duration_ns = read_int(io, 8)
 

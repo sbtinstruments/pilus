@@ -1,6 +1,7 @@
+from os import SEEK_CUR
 from typing import BinaryIO
 
-from ._errors import IqsMissingDataError
+from ._errors import IqsError, IqsMissingDataError, IqsOSError, IqsUnicodeDecodeError
 
 IQS_BYTE_ORDER = "little"
 
@@ -8,37 +9,66 @@ IQS_BYTE_ORDER = "little"
 def read_int(io: BinaryIO, size: int, signed: bool = False) -> int:
     """Read integer of the given byte size.
 
-    May raise:
-      * `OSError`
+    May raise `IqsError` or one of its derivatives. Specifically:
+      * `IqsOSError`
       * `IqsMissingDataError`
-      * `ValueError` on invalid integers
+      * `IqsError` on invalid integers
     """
-    return int.from_bytes(
-        read_exactly(io, size), byteorder=IQS_BYTE_ORDER, signed=signed
-    )
+    data = read_exactly(io, size)
+    try:
+        return int.from_bytes(data, byteorder=IQS_BYTE_ORDER, signed=signed)
+    except ValueError as exc:
+        raise IqsError("Could not decode integer") from exc
 
 
-def read_fixed_string(io: BinaryIO, max_size: int, *, terminator: str = "\x00") -> str:
+def read_terminated_string(
+    io: BinaryIO,
+    max_size: int,
+    *,
+    terminator: str = "\x00",
+) -> str:
+    """Read a terminated string.
+
+    May raise `IqsError` or one of its derivatives. Specifically:
+      * `IqsOSError`
+      * `IqsMissingDataError`
+      * `IqsUnicodeDecodeError`
+      * `IqsError` if there is no terminator in the string
+    """
+    full_str = read_string(io, max_size)
+    try:
+        terminator_pos = full_str.index(terminator)
+    except ValueError as exc:
+        raise IqsError("Could not find terminator in fixed-length string") from exc
+    return full_str[:terminator_pos]
+
+
+def read_string(io: BinaryIO, size: int) -> str:
     """Read a fixed-length string.
 
-    May raise:
-      * `OSError`
+    May raise `IqsError` or one of its derivatives. Specifically:
+      * `IqsOSError`
       * `IqsMissingDataError`
-      * `UnicodeDecodeError`
-      * `ValueError` if there is no terminator in the string
+      * `IqsUnicodeDecodeError`
     """
-    full_str = read_exactly(io, max_size).decode()
-    return full_str[: full_str.index(terminator)]
+    data = read_exactly(io, size)
+    try:
+        return data.decode()
+    except UnicodeDecodeError as exc:
+        raise IqsUnicodeDecodeError(*exc.args) from exc
 
 
 def read_exactly(io: BinaryIO, size: int) -> bytes:
     """Read `size` bytes from the binary IO stream.
 
-    May raise:
-      * `OSError`
-      * `IqsMissingDataError` if we didn't read exactly `size` bytes.
+    May raise `IqsError` or one of its derivatives. Specifically:
+      * `IqsOSError` on OS-level errors.
+      * `IqsMissingDataError` if we didn't read exactly `size` bytes
     """
-    data = io.read(size)
+    try:
+        data = io.read(size)
+    except OSError as exc:
+        raise IqsOSError(*exc.args) from exc
     number_of_bytes_read = len(data)
     if number_of_bytes_read != size:
         raise IqsMissingDataError(
@@ -47,3 +77,14 @@ def read_exactly(io: BinaryIO, size: int) -> bytes:
         )
     return data
 
+
+def skip_data(io: BinaryIO, size: int) -> None:
+    """Skip `size` bytes of data in the IO stream.
+
+    May raise `IqsError` or one of its derivatives. Specifically:
+      * `IqsOSError` on OS-level errors
+    """
+    try:
+        io.seek(size, SEEK_CUR)
+    except OSError as exc:
+        raise IqsOSError(*exc.args) from exc

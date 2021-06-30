@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from datetime import timedelta
 from typing import BinaryIO, Optional
 
 from ._chunks import IdatChunk, IhdrChunk, read_chunk
@@ -19,7 +18,7 @@ def from_io(io: BinaryIO) -> Optional[Iqs]:
 
     Supports version 2 of the IQS specification.
 
-    May raise `IqsError`.
+    May raise `IqsError` or one of its derivatives.
 
     Merges all IDAT chunks into a single IDAT chunk. This way, all the raw binary
     data is contiguous.

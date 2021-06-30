@@ -1,8 +1,7 @@
 from dataclasses import dataclass
-from os import SEEK_CUR
 from typing import BinaryIO
 
-from .._io_utilities import read_fixed_string, read_int
+from .._io_utilities import read_int, read_terminated_string, skip_data
 
 
 @dataclass(frozen=True)
@@ -25,20 +24,23 @@ class IhdrChunk:
 
 
 def read_ihdr(io: BinaryIO) -> IhdrChunk:
-    """Deserialize the IO stream into an IHDR chunk."""
+    """Deserialize the IO stream into an IHDR chunk.
+
+    May raise `IqsError` or one of its derivatives.
+    """
     number_of_sites = read_int(io, 4)
     ihdr_value: dict[str, SiteHeader] = dict()
     for _ in range(number_of_sites):
-        site_name = read_fixed_string(io, 256)  # E.g.: "site0"
+        site_name = read_terminated_string(io, 256)  # E.g.: "site0"
         number_of_channels = read_int(io, 4)
         site_header: SiteHeader = dict()
         for _ in range(number_of_channels):
-            channel_name = read_fixed_string(io, 256)  # E.g.: "hf"
+            channel_name = read_terminated_string(io, 256)  # E.g.: "hf"
             time_step_ns = read_int(io, 4)
             byte_depth = read_int(io, 1)
             # HACK: Read the first 8 bytes and skip the remaining 56 bytes
             max_amplitude = read_int(io, 8, signed=True)
-            io.seek(56, SEEK_CUR)
+            skip_data(io, 56)
             # Add channel header to site header
             channel_header = ChannelHeader(time_step_ns, byte_depth, max_amplitude)
             site_header[channel_name] = channel_header

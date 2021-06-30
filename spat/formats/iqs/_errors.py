@@ -13,3 +13,11 @@ class IqsMissingDataError(IqsError):
     def __init__(self, *args: Any, number_of_bytes_read: int) -> None:
         super().__init__(*args)
         self.number_of_bytes_read = number_of_bytes_read
+
+
+class IqsOSError(IqsError, OSError):
+    """Could read decode string in an IQS resource."""
+
+
+class IqsUnicodeDecodeError(IqsError, UnicodeDecodeError):
+    """OS-level error in the IQS package."""

@@ -1,8 +1,16 @@
 from dataclasses import dataclass
+from enum import Enum, auto
 from typing import BinaryIO, Optional
 
-from ._chunks import IdatChunk, IhdrChunk, read_chunk, write_chunk
+from ._chunks import IdatChunk, IhdrChunk, SdatChunk, ShdrChunk, read_chunk, write_chunk
 from ._signature import read_and_validate_signature, write_signature
+
+
+class IqsVersion(Enum):
+    """Version of the IQS specification."""
+
+    V1_0_0 = auto()
+    V2_0_0 = auto()
 
 
 @dataclass(frozen=True)
@@ -43,13 +51,30 @@ def from_io(io: BinaryIO) -> Optional[Iqs]:
     return Iqs(ihdr, merged_idat)
 
 
-def to_io(iqs: Iqs, io: BinaryIO) -> None:
+def to_io(
+    iqs: Iqs,
+    io: BinaryIO,
+    *,
+    version: IqsVersion = IqsVersion.V2_0_0,
+    site_to_keep: Optional[str] = None,
+) -> None:
     """Serialize IQS instance to the IO stream.
 
-    Supports version 2 of the IQS specification.
-
-    May raise `IqsError` or one of its derivatives.
+    May raise:
+      * `IqsError` or one of its derivatives.
+      * `RuntimeError` if the platform doesn't natively support 4-byte integers.
     """
     write_signature(io)
-    write_chunk(io, iqs.ihdr)
-    write_chunk(io, iqs.idat)
+    if version is IqsVersion.V2_0_0:
+        write_chunk(io, iqs.ihdr)
+        write_chunk(io, iqs.idat)
+    elif version is IqsVersion.V1_0_0:
+        if site_to_keep is None:
+            raise ValueError(
+                "You must specify `site_to_keep` when you target "
+                "version 1.0.0 of the IQS specification."
+            )
+        write_chunk(io, ShdrChunk.from_ihdr(iqs.ihdr, site_to_keep=site_to_keep))
+        write_chunk(io, SdatChunk.from_idat(iqs.idat, site_to_keep=site_to_keep))
+    else:
+        assert False

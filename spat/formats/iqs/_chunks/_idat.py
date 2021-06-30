@@ -5,13 +5,7 @@ from datetime import datetime, timedelta
 from typing import BinaryIO, ClassVar, Optional
 
 from .._errors import IqsError
-from .._io_utilities import (
-    read_exactly,
-    read_int,
-    write_exactly,
-    write_int,
-    write_terminated_string,
-)
+from .._io_utilities import read_exactly, read_int, write_exactly, write_int
 from ._ihdr import IhdrChunk
 
 
@@ -21,6 +15,10 @@ class ChannelData:
 
     re: bytes
     im: bytes
+
+    def __post_init__(self) -> None:
+        if len(self.re) != len(self.im):
+            raise ValueError("The two complex parts must have the same length")
 
 
 SiteData = dict[str, ChannelData]

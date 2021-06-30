@@ -30,3 +30,7 @@ def test_iqs_from_io(fs: FakeFilesystem) -> None:
     print(f"{imported_duration_s=:.1f}")
 
     assert duration_s == imported_duration_s
+
+    export_v1_file = Path("data_export_v1.iqs")
+    with export_v1_file.open("wb") as io:
+        iqs.to_io(data, io, version=iqs.IqsVersion.V1_0_0, site_to_keep="site1")

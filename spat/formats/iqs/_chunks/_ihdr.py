@@ -6,7 +6,6 @@ from typing import BinaryIO, ClassVar
 from .._io_utilities import (
     read_int,
     read_terminated_string,
-    write_exactly,
     write_int,
     write_terminated_string,
 )
@@ -57,7 +56,7 @@ class IhdrChunk(dict[str, SiteHeader]):
         return cls(ihdr_value)
 
     def to_io(self, io: BinaryIO) -> None:
-        """Serialize this chunk into the IO stream.
+        """Serialize this chunk to the IO stream.
 
         This only returns the "data" and not the "length", "type", or "CRC".
 

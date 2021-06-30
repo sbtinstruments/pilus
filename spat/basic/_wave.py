@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Optional
 
 from ..formats import wave
-from ..formats.registry import add_merger, add_deserializer
+from ..formats.registry import add_deserializer, add_merger
 from ._wave_meta import WaveMeta
 
 

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from io import SEEK_CUR, BufferedWriter, BytesIO
+from io import SEEK_CUR, BytesIO
 from typing import BinaryIO, Optional, Union
 
 from .._crc import crc32
@@ -7,6 +7,8 @@ from .._errors import IqsError, IqsMissingDataError
 from .._io_utilities import read_exactly, read_int, seek, write_exactly, write_int
 from ._idat import IdatChunk
 from ._ihdr import IhdrChunk
+from ._sdat import SdatChunk
+from ._shdr import ShdrChunk
 
 
 @dataclass(frozen=True)
@@ -14,7 +16,7 @@ class NonCriticalChunk:
     """Non-critical chunk."""
 
 
-Chunk = Union[NonCriticalChunk, IhdrChunk, IdatChunk]
+Chunk = Union[NonCriticalChunk, IhdrChunk, IdatChunk, ShdrChunk, SdatChunk]
 
 
 def read_chunk(io: BinaryIO, *, ihdr: Optional[IhdrChunk] = None) -> Optional[Chunk]:
@@ -100,7 +102,9 @@ def _deserialize_chunk_data(
     return NonCriticalChunk()
 
 
-def write_chunk(io: BinaryIO, chunk: Union[IhdrChunk, IdatChunk]) -> None:
+def write_chunk(
+    io: BinaryIO, chunk: Union[IhdrChunk, IdatChunk, ShdrChunk, SdatChunk]
+) -> None:
     """Serialize chunk into the IO stream.
 
     May raise `IqsError` or one of its derivatives.

@@ -2,10 +2,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import BinaryIO, Optional
+from typing import BinaryIO, ClassVar, Optional
 
 from .._errors import IqsError
-from .._io_utilities import read_exactly, read_int
+from .._io_utilities import (
+    read_exactly,
+    read_int,
+    write_exactly,
+    write_int,
+    write_terminated_string,
+)
 from ._ihdr import IhdrChunk
 
 
@@ -16,9 +22,6 @@ class ChannelData:
     re: bytes
     im: bytes
 
-    def __len__(self) -> int:
-        return len(self.re)
-
 
 SiteData = dict[str, ChannelData]
 
@@ -27,9 +30,11 @@ SiteData = dict[str, ChannelData]
 class IdatChunk:
     """LPCM signal data."""
 
+    type_: ClassVar[bytes] = b"IDAT"
+
     start_time: datetime
     duration_ns: int
-    value: dict[str, SiteData]
+    sites: dict[str, SiteData]
 
     @property
     def end_time(self) -> datetime:
@@ -61,10 +66,10 @@ class IdatChunk:
         # Go through the site/channel hierarchy based on that of the first chunk.
         # We assume that the subsequent chunks follow the same hierarchy.
         merged_value: dict[str, SiteData] = dict()
-        for site_name, site_data in first_chunk.value.items():
+        for site_name, site_data in first_chunk.sites.items():
             merged_site: SiteData = dict()
             for channel_name in site_data:
-                channel_header = ihdr.value[site_name][channel_name]
+                channel_header = ihdr[site_name][channel_name]
                 if total_duration_ns % channel_header.time_step_ns != 0:
                     raise IqsError(
                         "Total duration is not a multiple of the IHDR time step"
@@ -77,9 +82,10 @@ class IdatChunk:
                 merged_im = bytearray(total_byte_length)
                 offset = 0
                 for chunk in chunks:
-                    site = chunk.value[site_name]
+                    site = chunk.sites[site_name]
                     channel = site[channel_name]
-                    length = len(channel)
+                    length = len(channel.re)
+                    assert length == len(channel.im)
                     merged_re[offset : offset + length] = channel.re
                     merged_im[offset : offset + length] = channel.im
                     offset += length
@@ -114,68 +120,56 @@ class IdatChunk:
                 )
             previous_chunk = chunk
 
+    @classmethod
+    def from_io(cls, io: BinaryIO, *, ihdr: IhdrChunk) -> IdatChunk:
+        """Deserialize the IO stream into an IDAT chunk.
 
-def read_idat(io: BinaryIO, *, ihdr: IhdrChunk) -> IdatChunk:
-    """Deserialize the IO stream into an IDAT chunk.
+        May raise `IqsError` or one of its derivatives.
+        """
+        timestamp_us = read_int(io, 8)
+        duration_ns = read_int(io, 8)
 
-    May raise `IqsError` or one of its derivatives.
-    """
-    timestamp_us = read_int(io, 8)
-    duration_ns = read_int(io, 8)
+        idat_value: dict[str, SiteData] = dict()
+        for site_name, site_header in ihdr.items():
+            site_data: SiteData = dict()
+            for channel_name, channel_header in site_header.items():
+                if duration_ns % channel_header.time_step_ns != 0:
+                    raise IqsError(
+                        "IDAT duration is not a multiple of the IHDR time step"
+                    )
+                logical_length = duration_ns // channel_header.time_step_ns
+                byte_length = logical_length * channel_header.byte_depth
+                re_data = read_exactly(io, byte_length)
+                im_data = read_exactly(io, byte_length)
+                # Add channel data to site data
+                channel_data = ChannelData(re_data, im_data)
+                site_data[channel_name] = channel_data
+            # Add site header to chunk
+            idat_value[site_name] = site_data
+        start_time = datetime.fromtimestamp(timestamp_us * 1e-6)
+        return IdatChunk(start_time, duration_ns, idat_value)
 
-    idat_value: dict[str, SiteData] = dict()
-    for site_name, site_header in ihdr.value.items():
-        site_data: SiteData = dict()
-        for channel_name, channel_header in site_header.items():
-            if duration_ns % channel_header.time_step_ns != 0:
-                raise IqsError("IDAT duration is not a multiple of the IHDR time step")
-            logical_length = duration_ns // channel_header.time_step_ns
-            byte_length = logical_length * channel_header.byte_depth
-            re_data = read_exactly(io, byte_length)
-            im_data = read_exactly(io, byte_length)
-            # Add channel data to site data
-            channel_data = ChannelData(re_data, im_data)
-            site_data[channel_name] = channel_data
-        # Add site header to chunk
-        idat_value[site_name] = site_data
-    start_time = datetime.fromtimestamp(timestamp_us * 1e-6)
-    return IdatChunk(start_time, duration_ns, idat_value)
+    def to_io(self, io: BinaryIO) -> None:
+        """Serialize this chunk into the IO stream.
 
+        This only returns the "data" and not the "length", "type", or "CRC".
 
-# def _write_idat(io: BinaryIO, iqs) -> None:
-#     """Write IDAT chunks."""
-#     for chunk in iqs["IDAT"]:
-#         # write chunk length
-#         write_uint32(io, _get_idat_b_length(chunk))
-#         # write chunk type
-#         io.write(b"IDAT")
-#         # write timestamp
-#         write_uint64(io, chunk["timestamp"])
-#         # write duration
-#         write_uint64(io, chunk["duration"])
-#         # write data chunks
-#         for site_name, site in chunk.items():
-#             if type(site) is not defaultdict:
-#                 continue
-#             for channel_name, channel in site.items():
-#                 _byte_depth = iqs["IHDR"][site_name][channel_name]["sample_byte_depth"]
-#                 if _byte_depth == 1:
-#                     _write_int_func = write_int8
-#                 elif _byte_depth == 4:
-#                     _write_int_func = write_int32
-#                 elif _byte_depth == 8:
-#                     _write_int_func = write_int64
-#                 else:
-#                     _write_int_func = write_int16
+        May raise `IqsError` or one of its derivatives.
+        """
+        timestamp_us = int(self.start_time.timestamp() * 1e6)
+        write_int(io, timestamp_us, 8)
+        write_int(io, self.duration_ns, 8)
+        for site in self.sites.values():
+            for channel in site.values():
+                write_exactly(io, channel.re)
+                write_exactly(io, channel.im)
 
-#                 [_write_int_func(io, data.item()) for data in channel["re"]]
-#                 [_write_int_func(io, data.item()) for data in channel["im"]]
-
-#         # write crc
-#         write_uint32(io, 0)
-
-
-# def _get_idat_b_length(idat: dict) -> int:
-#     """Compute IDAT chunk byte length."""
-#     # TODO: remove hard-coded site/channel/re/im names
-#     return ((len(idat["site0"]["hf"]["re"]) * 4) * 4 + 8) * 2
+    def data_length(self) -> int:
+        """Return the byte size of this chunk in serialized form."""
+        # Timestamp and duration
+        result = 8 + 8
+        # Actual data
+        for site in self.sites.values():
+            for channel in site.values():
+                result += len(channel.re) + len(channel.im)
+        return result

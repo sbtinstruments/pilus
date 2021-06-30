@@ -1,12 +1,18 @@
-from os import SEEK_CUR
+from io import SEEK_CUR
 from typing import BinaryIO
 
-from ._errors import IqsError, IqsMissingDataError, IqsOSError, IqsUnicodeDecodeError
+from ._errors import (
+    IqsError,
+    IqsMissingDataError,
+    IqsOSError,
+    IqsUnicodeDecodeError,
+    IqsUnicodeEncodeError,
+)
 
 IQS_BYTE_ORDER = "little"
 
 
-def read_int(io: BinaryIO, size: int, signed: bool = False) -> int:
+def read_int(io: BinaryIO, size: int, *, signed: bool = False) -> int:
     """Read integer of the given byte size.
 
     May raise `IqsError` or one of its derivatives. Specifically:
@@ -78,13 +84,82 @@ def read_exactly(io: BinaryIO, size: int) -> bytes:
     return data
 
 
-def skip_data(io: BinaryIO, size: int) -> None:
+def seek(io: BinaryIO, size: int, whence: int) -> None:
     """Skip `size` bytes of data in the IO stream.
 
     May raise `IqsError` or one of its derivatives. Specifically:
       * `IqsOSError` on OS-level errors
     """
     try:
-        io.seek(size, SEEK_CUR)
+        io.seek(size, whence)
     except OSError as exc:
         raise IqsOSError(*exc.args) from exc
+
+
+def tell(io: BinaryIO) -> int:
+    """Return the current position in the IO stream.
+
+    May raise `IqsError` or one of its derivatives. Specifically:
+      * `IqsOSError` on OS-level errors
+    """
+    try:
+        return io.tell()
+    except OSError as exc:
+        raise IqsOSError(*exc.args) from exc
+
+
+def write_int(io: BinaryIO, value: int, size: int, *, signed: bool = False) -> None:
+    """Encode integer and write the data to the IO stream.
+
+    May raise `IqsError` or one of its derivatives. Specifically:
+      * `IqsOSError` on OS-level errors
+      * `IqsError` if we can't encode the integer
+      * `IqsError` if we can't write all of the given data
+    """
+    try:
+        data = value.to_bytes(size, byteorder=IQS_BYTE_ORDER, signed=signed)
+    except ValueError as exc:
+        raise IqsError(f'Could not encode integer: "{exc}"') from exc
+    write_exactly(io, data)
+
+
+def write_terminated_string(
+    io: BinaryIO,
+    value: str,
+    max_size: int,
+    *,
+    terminator: bytes = b"\x00",
+) -> None:
+    """Encode string and write the data to the IO stream.
+
+    May raise `IqsError` or one of its derivatives.
+    """
+    try:
+        string_data = value.encode()
+    except UnicodeEncodeError as exc:
+        raise IqsUnicodeEncodeError(*exc.args) from exc
+    data = string_data + terminator
+    if len(data) > max_size:
+        raise IqsError("Could not fit string into the given size.")
+    write_exactly(io, data)
+    remainder = max_size - len(data)
+    seek(io, remainder, SEEK_CUR)
+
+
+def write_exactly(io: BinaryIO, data: bytes) -> None:
+    """Write binary data to the IO stream.
+
+    May raise `IqsError` or one of its derivatives. Specifically:
+      * `IqsOSError` on OS-level errors
+      * `IqsError` if we can't write all of the given data
+    """
+    try:
+        number_of_bytes_written = io.write(data)
+    except OSError as exc:
+        raise IqsOSError(*exc.args) from exc
+    size = len(data)
+    if number_of_bytes_written != size:
+        raise IqsError(
+            f"Could only write {number_of_bytes_written} bytes "
+            f"of the total {size} bytes"
+        )

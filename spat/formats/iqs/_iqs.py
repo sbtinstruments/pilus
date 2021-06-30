@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from typing import BinaryIO, Optional
 
-from ._chunks import IdatChunk, IhdrChunk, read_chunk
-from ._signature import read_and_validate_signature
+from ._chunks import IdatChunk, IhdrChunk, read_chunk, write_chunk
+from ._signature import read_and_validate_signature, write_signature
 
 
 @dataclass(frozen=True)
@@ -43,12 +43,13 @@ def from_io(io: BinaryIO) -> Optional[Iqs]:
     return Iqs(ihdr, merged_idat)
 
 
-# def write_iqs(iqs, file_name: str) -> bool:
-#     """Write v2.0 iqs file."""
-#     with open(file_name, "w+b") as f:
-#         _write_signature(f)
-#         _write_sysi(f, iqs)
-#         _write_ihdr(f, iqs)
-#         _write_idat(f, iqs)
+def to_io(iqs: Iqs, io: BinaryIO) -> None:
+    """Serialize IQS instance to the IO stream.
 
-#     return True
+    Supports version 2 of the IQS specification.
+
+    May raise `IqsError` or one of its derivatives.
+    """
+    write_signature(io)
+    write_chunk(io, iqs.ihdr)
+    write_chunk(io, iqs.idat)

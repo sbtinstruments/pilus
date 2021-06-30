@@ -1,10 +1,12 @@
 from dataclasses import dataclass
+from io import SEEK_CUR, BufferedWriter, BytesIO
 from typing import BinaryIO, Optional, Union
 
+from .._crc import crc32
 from .._errors import IqsError, IqsMissingDataError
-from .._io_utilities import read_int, read_string, skip_data
-from ._idat import IdatChunk, read_idat
-from ._ihdr import IhdrChunk, read_ihdr
+from .._io_utilities import read_exactly, read_int, seek, write_exactly, write_int
+from ._idat import IdatChunk
+from ._ihdr import IhdrChunk
 
 
 @dataclass(frozen=True)
@@ -25,12 +27,15 @@ def read_chunk(io: BinaryIO, *, ihdr: Optional[IhdrChunk] = None) -> Optional[Ch
     if chunk_length is None:
         return None
     # Read chunk type
-    chunk_type = _read_chunk_type(io)
+    chunk_type = read_exactly(io, 4)
     # Read chunk data
-    chunk = _read_chunk_data(io, chunk_type, chunk_length, ihdr=ihdr)
-    # TODO: Implement CRC check
-    # For now, we skip the CRC check
-    skip_data(io, 4)
+    chunk_data = read_exactly(io, chunk_length)
+    chunk = _deserialize_chunk_data(chunk_type, chunk_data, ihdr=ihdr)
+    # CRC check
+    actual_crc = _chunk_crc(chunk_type, chunk_data)
+    expected_crc = read_int(io, 4)
+    if actual_crc != expected_crc:
+        raise IqsError("CRC mismatch")
     return chunk
 
 
@@ -52,18 +57,9 @@ def _read_chunk_length(io: BinaryIO) -> Optional[int]:
         raise IqsError(f'Could not read chunk length: "{exc}"') from exc
 
 
-def _read_chunk_type(io: BinaryIO) -> str:
-    """Read the 4-byte chunk ID.
-
-    May raise `IqsError` or one of its derivatives.
-    """
-    return read_string(io, 4)
-
-
-def _read_chunk_data(
-    io: BinaryIO,
-    chunk_type: str,
-    chunk_length: int,
+def _deserialize_chunk_data(
+    chunk_type: bytes,
+    chunk_data: bytes,
     *,
     ihdr: Optional[IhdrChunk] = None,
 ) -> Chunk:
@@ -71,26 +67,90 @@ def _read_chunk_data(
 
     May raise `IqsError` or one of its derivatives.
     """
+    # It may seem a bit strange that we convert `chunk_data` back into an IO
+    # stream here. The reasoning is three-fold:
+    #   1. We already read all the data into memory to compute the CRC. It doesn't
+    #      make sense to read it again just to satisfy the `from_io` interface.
+    #   2. The various deserializers only requires a single pass over the data. In
+    #      other words, the deserializers only require a `BinaryIO` stream and not
+    #      the full `bytes` interface.
+    #   3. The deserializers require the notion of "position within the data" that
+    #      you get from `BinaryIO` but not from `bytes`. if we only got `bytes`,
+    #      we would have to keep track of this "position" anyway.
+    chunk_data_io = BytesIO(chunk_data)
     # TODO: Add support for the non-critical "sYSI" (system information) chunk
     # if chunk_type == "sYSI":
     #     return _read_sysi(io, chunk_length)
-    if chunk_type == "IHDR":
+    if chunk_type == IhdrChunk.type_:
         if ihdr is not None:
             raise IqsError("Encountered multiple IHDR chunks. There can only be one.")
-        return read_ihdr(io)
-    if chunk_type == "IDAT":
+        return IhdrChunk.from_io(chunk_data_io)
+    if chunk_type == IdatChunk.type_:
         if ihdr is None:
             raise IqsError("Encountered IDAT chunk before IHDR chunk.")
-        return read_idat(io, ihdr=ihdr)
+        return IdatChunk.from_io(chunk_data_io, ihdr=ihdr)
     # We don't reckognize the chunk type.
-    # Check the so-called "ancilliary bit" to see if it's a critical chunk
-    chunk_is_critical = chunk_type[0].isupper()
-    if chunk_is_critical:
+    # Check the so-called "ancilliary bit" to see if it's an:
+    #   1. Ancilliary chunk (optional)
+    #   2. Critical chunk (required)
+    chunk_is_ancilliary = bool(chunk_type[0] & 0b10000)
+    if not chunk_is_ancilliary:
         # Raise an error if we can't deserialize a critical chunk
-        raise IqsError(f'Encountered unknown critical chunk: "{chunk_type}"')
-    # Skip non-critical chunks
-    skip_data(io, chunk_length)
+        raise IqsError("Encountered unknown critical chunk")
     return NonCriticalChunk()
+
+
+def write_chunk(io: BinaryIO, chunk: Union[IhdrChunk, IdatChunk]) -> None:
+    """Serialize chunk into the IO stream.
+
+    May raise `IqsError` or one of its derivatives.
+    """
+    # Serialize the chunk data itself
+    chunk_data_io = BytesIO()
+    # We know the data length up front so we can reserve (pre-allocate)
+    # memory for it.
+    chunk_data_length = chunk.data_length()
+    _reserve(chunk_data_io, chunk_data_length)  # [1]
+    chunk.to_io(chunk_data_io)
+    # Our `chunk.data_length` function is exact. We neither reserve too much
+    # or too little data at [1].
+    assert chunk_data_length == len(chunk_data_io.getbuffer())
+    # Write chunk length and type
+    write_int(io, len(chunk_data_io.getbuffer()), 4)
+    write_exactly(io, chunk.type_)
+    # Then the data itself
+    write_exactly(io, chunk_data_io.getbuffer())
+    # Finally, write the CRC checksum of the data and type
+    crc = _chunk_crc(chunk.type_, chunk_data_io.getbuffer())
+    write_int(io, crc, 4)
+
+
+def _reserve(io: BinaryIO, size: int) -> None:
+    """Pre-allocate data in the IO stream."""
+    if size < 0:
+        raise IqsError("Can't reserve a negative number of bytes")
+    if size == 0:
+        return
+    # Theory of operation:
+    #
+    #   1. Seek ahead
+    #   2. Write a single byte
+    #   3. Seek back to where we start
+    #
+    # If we only do (1) and (3) alone, we only move a position but we won't
+    # cause any data allocation. Because we also do (2), we force the
+    # stream to allocate the data.
+    if size != 1:
+        seek(io, size - 1, SEEK_CUR)
+    write_exactly(io, bytes(1))
+    seek(io, -size, SEEK_CUR)
+
+
+def _chunk_crc(chunk_type: bytes, chunk_data: bytes) -> int:
+    crc = 0xFFFFFFFF
+    crc = crc32(chunk_type, crc)
+    crc = crc32(chunk_data, crc)
+    return crc
 
 
 # def _read_sysi(io: BinaryIO, chunk_length):

@@ -1,7 +1,7 @@
 from typing import BinaryIO
 
 from ._errors import IqsError
-from ._io_utilities import read_exactly
+from ._io_utilities import read_exactly, write_exactly
 
 _IQS_SIGNATURE = b"\x89IQS\x0D\x0A\x1A\x0A"
 
@@ -26,6 +26,14 @@ def read_signature(io: BinaryIO) -> bytes:
     May raise `IqsError` or one of its derivatives.
     """
     return read_exactly(io, 8)
+
+
+def write_signature(io: BinaryIO) -> None:
+    """Write IQS signature.
+
+    May raise `IqsError` or one of its derivatives.
+    """
+    write_exactly(io, _IQS_SIGNATURE)
 
 
 # def _write_signature(io: BinaryIO, sign="894951530d0a1a0a"):

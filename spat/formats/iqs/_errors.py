@@ -16,8 +16,12 @@ class IqsMissingDataError(IqsError):
 
 
 class IqsOSError(IqsError, OSError):
-    """Could read decode string in an IQS resource."""
+    """OS-level error in the IQS package."""
 
 
 class IqsUnicodeDecodeError(IqsError, UnicodeDecodeError):
-    """OS-level error in the IQS package."""
+    """Could decode string in an IQS resource."""
+
+
+class IqsUnicodeEncodeError(IqsError, UnicodeEncodeError):
+    """Could encode string in an IQS resource."""

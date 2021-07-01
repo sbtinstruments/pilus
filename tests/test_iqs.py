@@ -40,3 +40,5 @@ def test_iqs_from_io(fs: FakeFilesystem) -> None:
     assert data_v1_imported is not None
     imported_v1_duration_s = data_v1_imported.idat.duration_ns * 1e-9
     print(f"{imported_v1_duration_s=:.1f}")
+
+    assert imported_duration_s == imported_v1_duration_s

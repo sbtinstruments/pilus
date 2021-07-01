@@ -1,22 +1,24 @@
+from pandas.core import series
 import altair as alt
 import pandas as pd
 import numpy as np
+import scipy.stats as stats
 import os
 import re
+
 
 alt.renderers.enable('altair_viewer')
 alt.data_transformers.disable_max_rows()
 
-ges_data = True
-lower_min = False
+ges_data = False
+lower_min = True
 
 # Build up a pandas dataframe with the data we want. Traverse the directory, looking for 'transitions.csv'-files, extracting, transforming and loading as we go.
 
-def generate_tt_histogram(transitions_file):
-    pass
-
-def get_name():
-    pass
+def iam(data: pd.Series, quantile=0.25):
+    q = data.quantile([quantile, 1-quantile])  # calculate lower and upper bounds
+    masked = data[~data.clip(*q).isin(q)]
+    return masked.mean()
 
 get_ps_ges = re.compile(r'PS\s([0-9]{2})')
 
@@ -48,9 +50,6 @@ if lower_min == True:
 for root, dirs, files in os.walk(root_dir, topdown=False):
     for name in files:
         if name.endswith('transitions.csv'):
-            i = i+1
-            if i<2:
-                continue
             # Open csv file
             filename = os.path.join(root, name)
             print(filename)
@@ -58,6 +57,7 @@ for root, dirs, files in os.walk(root_dir, topdown=False):
             # Add measurement ID
             short_filename = '/'.join(filename.split('/')[-3:-1])
             tt['measurement'] = short_filename
+
             # Add pumpspeed
             if ges_data == True:
                 ps_re = get_ps_ges.search(filename)
@@ -71,18 +71,22 @@ for root, dirs, files in os.walk(root_dir, topdown=False):
                 else:
                     ps = 20
             tt['pumpspeed'] = ps
-
+            
+            # Add flow rate estimate
+            tt['iam'] = iam(tt['high_real.transition.offset'], quantile=0.25)
             # Append
             if transition_times is None:
                 transition_times = tt
             else:
                 transition_times = transition_times.append(tt, ignore_index=True)
-            #transition_times = transition_times.truncate(after=50)
+            
+            
 
 # Take care of annoying naming
 transition_times = transition_times.rename(columns={'high_real.transition.offset': 'high_real_transition_offset'})
 
 selector = alt.selection_single(empty='all', fields=['measurement'])
+highlight = alt.selection_single(on='mouseover', fields=['measurement'], empty='none')
 
 color_scale = alt.Scale(domain=[6, 40],
                         range=['#1FC3AA', '#8624F5'])
@@ -121,33 +125,32 @@ line_min = alt.Chart(pd.DataFrame({'x': [250000]})).mark_rule().encode(x='x')
 line_max = alt.Chart(pd.DataFrame({'x': [750000]})).mark_rule().encode(x='x')
 
 
-hists_text = base.transform_filter(
-    selector
-).transform_calculate(
-    num_transitions='datum.total'
-).mark_text(align='right', dx=5, dy=-5).encode(
-    text="num_transitions:N"
-)
+# hists_text = base.transform_filter(
+#     selector
+# ).transform_calculate(
+#     num_transitions='datum.total'
+# ).mark_text(align='right', dx=5, dy=-5).encode(
+#     text="num_transitions:N"
+# )
 
 hists = alt.layer(hists_data, line_min, line_max)
 
-# hists = base.mark_bar(opacity=0.5, thickness=100).encode(
-#     x = alt.X('high_real_transition_offset:Q', bin=alt.Bin(step=10000), scale=alt.Scale(domain=[150000, 850000])),
-#     y = alt.Y('count()',
-#             stack=None,
-#             scale=alt.Scale(domain=[0,100])),
-#     color=alt.Color('pumpspeed:Q',
-#                     scale=color_scale)
-# ).transform_filter(
-#     selector
-# )
+concentrations = base.add_selection(selector).transform_joinaggregate(
+    total='count(*)',
+    groupby=['measurement']
+).transform_calculate(
+    #yval='datum.total / datum.pumpspeed'
+    yval = 'datum.total * datum.iam'
+).mark_point(filled=True, size=150).encode(
+    x=alt.X('pumpspeed:Q'),
+    y=alt.Y('yval:Q'),   ## = count() / pumpspeed                  
+    color=alt.condition(selector,
+                        'pumpspeed:Q',
+                        alt.value('lightgray'),
+                        scale=color_scale),
+    tooltip=['measurement', 'pumpspeed', 'count():Q']
+).interactive()
 
-
-
-#hists = base.mark_bar(opacity=0.5, thickness=1000).encode(
-#    x=alt.X('high_real.transition.offset:Q',
-#            bin=True),
-#    y='count()'
-#)
-
-(points | hists).properties(title=f'GES data: {ges_data} & lower_min: {lower_min}').show()
+final_chart = (points | concentrations | hists).properties(title=f'GES data: {ges_data} & lower_min: {lower_min}')
+final_chart.save('chart.html')
+final_chart.show()

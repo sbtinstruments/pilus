@@ -63,7 +63,7 @@ def process_iqs_dir(root_dir: Path, config: ProcessConfig):
                 if re.match(r'.*site.*', os.path.basename(file)) is None:
                     if config.make_nested_dirs == True:
                         file_path = os.path.join(root, file)
-                        new_dir_path = os.path.join(root_dir, "processed_lower_min", file.strip('.iqs'))
+                        new_dir_path = os.path.join(root_dir, "processed", file.strip('.iqs'))
                         # Make containing folder
                         try:
                             print('Making ' + new_dir_path)
@@ -80,6 +80,6 @@ if __name__ == "__main__":
     config.delete_site_iqs = False
     file_path = os.path.dirname(os.path.realpath(__file__)) + "/2um_100e5-20210203-102759-A94.iqs"
     #root_dir = "/media/jonatan/20BCC727BCC6F5F6/FromUbuntu/pump_speeds/2021-06-04 Pump speed listeria coli 1;10 PBS"
-    root_dir = "/media/jonatan/20BCC727BCC6F5F6/FromUbuntu/pump_speeds/2021-06-03 Underestimation investigation with beads"
+    root_dir = "/home/jonatan/dev/misc/calibration-conversion-beads/2021-06-30 5FCs 1Box QC checks/BB files/iqs"
     # process_iqs_file(file_path, config)
     process_iqs_dir(root_dir, config)

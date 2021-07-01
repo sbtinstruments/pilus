@@ -24,7 +24,7 @@
     },
     "dgauss": {
         "maxAnomalyOffSetMs": 1.5,
-        "minAnomalyOffSetMs": 0.35,
+        "minAnomalyOffSetMs": 0.5,
         "searchMarginMs": 15,
         "intraChannelConfidenceMargin": 0.15,
         "interChannelConfidenceMargin": 0.15,

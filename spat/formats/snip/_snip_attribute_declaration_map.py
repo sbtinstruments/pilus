@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Iterable, Optional
 
 from pydantic import validator
@@ -6,7 +8,6 @@ from ...model import Model, add_media_type
 from ._snip_attributes import (
     SnipAttribute,
     SnipAttributeDeclaration,
-    SnipAttributeType,
     SnipEnum,
     SnipEnumDeclaration,
     SnipInt,
@@ -36,26 +37,26 @@ class SnipAttributeDeclarationMap(Model):
         for name, value in kwargs.items():
             # Find type
             try:
-                type_ = self.__root__[name]
+                declaration = self.__root__[name]
             except KeyError as exc:
                 raise ValueError(f'There is no attribute named "{name}"') from exc
             # Int
-            if isinstance(type_, SnipIntDeclaration):
+            if isinstance(declaration, SnipIntDeclaration):
                 if not isinstance(value, int):
                     raise ValueError(f'The value "{value}" is not an integer')
-                yield (name, SnipInt(type=type_.type_, value=value))
+                yield (name, SnipInt(declaration=declaration, value=value))
             # Str
-            elif isinstance(type_, SnipStrDeclaration):
+            elif isinstance(declaration, SnipStrDeclaration):
                 if not isinstance(value, str):
                     raise ValueError(f'The value "{value}" is not a string')
-                yield (name, SnipStr(type=type_.type_, value=value))
+                yield (name, SnipStr(declaration=declaration, value=value))
             # Enum
-            elif isinstance(type_, SnipEnumDeclaration):
-                if value not in type_.values:
+            elif isinstance(declaration, SnipEnumDeclaration):
+                if value not in declaration.values:
                     raise ValueError(
                         f'There is no value named "{value}" in the "{name}" enum'
                     )
-                yield (name, SnipEnum(type=type_.type_, value=value))
+                yield (name, SnipEnum(declaration=declaration, value=value))
 
     def parse_raw_attributes(
         self, raw_attributes: Iterable[str]
@@ -71,38 +72,38 @@ class SnipAttributeDeclarationMap(Model):
         # This is why we require that enum values are globally unique at [1].
         if len_parts == 1:
             value = raw_attribute
-            name = self.get_enum_name_from_value(value)
-            if name is None:
+            result = self.get_enum_from_value(value)
+            if result is None:
                 raise ValueError(f'Could not find enum value "{value}"')
-            return (name, SnipEnum(type=SnipAttributeType.ENUM, value=value))
+            return result
         # We got both a name and a value
         if len_parts == 2:
             name, raw_value = parts
             # Find type
             try:
-                type_ = self.__root__[name]
+                declaration = self.__root__[name]
             except KeyError as exc:
                 raise ValueError(f'There is no attribute named "{name}"') from exc
             # Int
-            if isinstance(type_, SnipIntDeclaration):
-                return (name, SnipInt(type=type_.type_, value=int(raw_value)))
+            if isinstance(declaration, SnipIntDeclaration):
+                return (name, SnipInt(declaration=declaration, value=int(raw_value)))
             # Str
-            if isinstance(type_, SnipStrDeclaration):
-                return (name, SnipStr(type=type_.type_, value=raw_value))
+            if isinstance(declaration, SnipStrDeclaration):
+                return (name, SnipStr(declaration=declaration, value=raw_value))
             # Enum
-            if isinstance(type_, SnipEnumDeclaration):
-                if raw_value not in type_.values:
+            if isinstance(declaration, SnipEnumDeclaration):
+                if raw_value not in declaration.values:
                     raise ValueError(
                         f'There is no value named "{raw_value}" in the "{name}" enum'
                     )
-                return (name, SnipEnum(type=type_.type_, value=raw_value))
+                return (name, SnipEnum(declaration=declaration, value=raw_value))
         raise ValueError(f'Could not parse attribute: "{raw_attribute}"')
 
-    def get_enum_name_from_value(self, value: str) -> Optional[str]:
-        """Return the name of the enum that corresponds to the given value."""
+    def get_enum_from_value(self, value: str) -> Optional[tuple[str, SnipEnum]]:
+        """Return the (name, enum) pair that corresponds to the given value."""
         for name, enum in self.enums:
             if value in enum.values:
-                return name
+                return name, SnipEnum(declaration=enum, value=value)
         return None
 
     @validator("__root__")

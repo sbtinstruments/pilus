@@ -2,7 +2,8 @@ from pathlib import Path
 
 from pyfakefs.fake_filesystem import FakeFilesystem
 
-from spat.formats import iqs
+from spat.basic import Wave
+from spat.snipdb import SnipDb
 
 # FPA 2020-01-19: I don't want to include a large IQS file into the repo.
 # We need to figure out how to do this properly. For now, just point the
@@ -14,5 +15,7 @@ def test_iqs_from_io(fs: FakeFilesystem) -> None:
     fs.add_real_file("after2-measure-20191217-115350-0QX.iqs", target_path="data.iqs")
     data_file = Path("data.iqs")
     with data_file.open("rb") as io:
-        data = iqs.from_io(io)
-    assert data is not None
+        snip_db = SnipDb.from_iqs_io(io)
+
+    wave_metadata = [w.metadata for w in snip_db.search(Wave)]
+    print(wave_metadata)

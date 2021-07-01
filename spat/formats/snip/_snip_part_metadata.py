@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from immutables import Map
 from pydantic import BaseModel
 from pydantic.fields import Field
@@ -52,6 +54,13 @@ class SnipPartMetadata(BaseModel):
         # For `immutables.Map`
         # TODO: Add validator instead when pydantic supports custom data types.
         arbitrary_types_allowed = True
+
+
+def create_attribute_map(
+    attribute_declarations: SnipAttributeDeclarationMap, **kwargs: Any
+) -> SnipAttributeMap:
+    """Parse the kwargs into an attribute map."""
+    return Map(attribute_declarations.parse_kwargs(**kwargs))
 
 
 def _extract_raw_attribute(rest: str) -> tuple[str, frozenset[str]]:

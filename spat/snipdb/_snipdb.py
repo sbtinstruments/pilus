@@ -19,6 +19,7 @@ from ..formats.snip import (
     SnipPart,
     SnipPartMetadata,
 )
+from ._snip_from_iqs import iqs_to_attribute_declaration, iqs_to_snip_parts
 
 T = TypeVar("T")
 
@@ -168,25 +169,31 @@ class SnipDb:
 
     @classmethod
     def from_dir(cls, root: Path) -> SnipDb:
-        """Parse directory into an instance of this class."""
+        """Parse directory to an instance of this class."""
         if root.suffix == ".snip":
             return cls.from_snip_dir(root)
         raise ValueError("Can't determine media type from directory alone")
 
     @classmethod
     def from_snip_dir(cls, root: Path) -> SnipDb:
-        """Parse snip directory into an instance of this class."""
+        """Parse snip directory to an instance of this class."""
         return snip.from_dir(SnipDb, root)
 
     @classmethod
     def from_iqs_io(cls, io: BinaryIO) -> SnipDb:
-        """Parse IQS IO stream into an instance of this class."""
+        """Convert IQS IO stream to an instance of this class."""
         iqs_chunks = iqs.from_io(io)
+        # TODO: Rework the `IqsChunks` class. Combine header and data somehow.
         return cls.from_iqs_chunks(iqs_chunks)
 
     @classmethod
     def from_iqs_chunks(cls, iqs_chunks: iqs.IqsChunks) -> SnipDb:
-        """Parse IQS IO stream into an instance of this class."""
+        """Convert IQS chunks to an instance of this class."""
+        attribute_declarations = iqs_to_attribute_declaration(iqs_chunks)
+        return cls(
+            iqs_to_snip_parts(iqs_chunks, attribute_declarations),
+            attribute_declarations,
+        )
 
     def __iter__(self) -> Iterable[SnipPart[Any]]:
         """Return iterable of all parts in this database."""

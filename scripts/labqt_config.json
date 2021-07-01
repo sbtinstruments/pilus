@@ -1,0 +1,44 @@
+{
+    "chunk": {
+        "durationMs": 500,
+        "overlap": {
+            "method": "constant",
+            "value": 5
+        }
+    },
+    "baseline": {
+        "searchMarginMs": 5
+    },
+    "extrema": {
+        "decimationMethod": "none",
+        "decimation": 1,
+        "noiseEstimate": "fir_filter",
+        "ssdImplementation": "direct",
+        "compensateForDecimation": true,
+        "detection": "billauer",
+        "noiseThreshold": 15.0
+    },
+    "anomalies": {
+        "minExtrema": 2,
+        "searchMarginMs": 0.15
+    },
+    "dgauss": {
+        "maxAnomalyOffSetMs": 1.5,
+        "minAnomalyOffSetMs": 0.5,
+        "searchMarginMs": 15,
+        "intraChannelConfidenceMargin": 0.15,
+        "interChannelConfidenceMargin": 0.15,
+        "minSymmetryScale": 0.45,
+        "minStm": 0.2,
+        "totalScale": 0.5,
+        "separation": 0.0,
+        "peakOffset": 0.0,
+        "symmetryTotal": 0.5,
+        "symmetryScale": 0.5,
+        "symmetryFdhm": 0.5,
+        "minInfoLevel": 1
+    },
+    "transition": {
+        "maxIterations": 0
+    }
+}

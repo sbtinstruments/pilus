@@ -117,9 +117,6 @@ def _deserialize_chunk_data(
     #   1. Ancilliary chunk (optional)
     #   2. Critical chunk (required)
     chunk_is_ancilliary = chunk_type_name[0].islower()
-
-    print(f"{chunk_type_name=} {chunk_is_ancilliary=}")
-
     if not chunk_is_ancilliary:
         # Raise an error if we can't deserialize a critical chunk
         raise IqsError(f'Encountered unknown critical chunk: "{chunk_type_name}"')

@@ -25,7 +25,7 @@ class IqsVersion(Enum):
 
 
 @dataclass(frozen=True)
-class Iqs:
+class IqsChunks:
     """Raw IQS chunks."""
 
     ihdr: IhdrChunk
@@ -34,7 +34,7 @@ class Iqs:
 
 def from_io(
     io: BinaryIO, *, version_1_0_0_site_name: Optional[str] = None
-) -> Optional[Iqs]:
+) -> Optional[IqsChunks]:
     """Deserialize IO stream into an IQS instance.
 
     May raise `IqsError` or one of its derivatives.
@@ -79,11 +79,11 @@ def from_io(
     )
     # Merge all data together
     merged_idat = IdatChunk.merge_all(*idats, ihdr=ihdr)
-    return Iqs(ihdr, merged_idat)
+    return IqsChunks(ihdr, merged_idat)
 
 
 def to_io(
-    iqs: Iqs,
+    iqs: IqsChunks,
     io: BinaryIO,
     *,
     version: IqsVersion = IqsVersion.V2_0_0,

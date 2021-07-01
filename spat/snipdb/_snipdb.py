@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from functools import reduce
 from pathlib import Path
-from typing import Any, ClassVar, Iterable, Optional, Type, TypeVar
+from typing import Any, BinaryIO, ClassVar, Iterable, Optional, Type, TypeVar
 
 from tinydb import TinyDB, where
 from tinydb.queries import Query, QueryInstance
 from tinydb.storages import MemoryStorage
 from typeguard import check_type
 
-from spat.formats import snip
+from spat.formats import iqs, snip
 
 from ..formats.registry import add_deserializer
 from ..formats.snip import (
@@ -178,6 +178,16 @@ class SnipDb:
         """Parse snip directory into an instance of this class."""
         return snip.from_dir(SnipDb, root)
 
+    @classmethod
+    def from_iqs_io(cls, io: BinaryIO) -> SnipDb:
+        """Parse IQS IO stream into an instance of this class."""
+        iqs_chunks = iqs.from_io(io)
+        return cls.from_iqs_chunks(iqs_chunks)
+
+    @classmethod
+    def from_iqs_chunks(cls, iqs_chunks: iqs.IqsChunks) -> SnipDb:
+        """Parse IQS IO stream into an instance of this class."""
+
     def __iter__(self) -> Iterable[SnipPart[Any]]:
         """Return iterable of all parts in this database."""
         return (_doc_to_part(doc) for doc in self._parts)
@@ -192,68 +202,3 @@ def _doc_to_part(document: dict[str, Any]) -> SnipPart[Any]:
 
 
 add_deserializer(SnipDb.snip_media_type, from_dir=SnipDb.from_snip_dir)
-
-
-#   ## Raw data
-
-#   E.g., the data in an IQS file.
-
-#   We split raw data into two files:
-#     1. LPCM data in WAVE format.
-#        my-data.wav
-#     2. Metadata. (data that doesn't fit into the WAVE file itself)
-#        my-data.wav-meta.json
-
-#   ### LPCM (Linear Pulse-Code Modulation) data
-
-#   Store main data in a WAVE file
-
-#   Media type: audio/vnd.wave
-#   Contains:
-#     * sample_rate: int
-#     * byte_depth: int
-#     * data: bytes
-
-#   ### Metadata
-
-#   Store metadata in a JSON file.
-
-#   Media type: application/vnd.sbt.wav-meta+json
-#   Contains: {
-#     "startTime": time point (absolute; UTC)
-#     "maxValue": max value of PCM data
-#   }
-
-#   ## Extrema
-
-#   Store extrema in an array in a JSON file.
-
-#   Media type: application/vnd.sbt.extrema+json
-#   Contains: [
-#     {
-#       "type": "minimum",
-#       "time": UTC in microseconds,
-#       "value": floating-point value relative to the baseline,
-#     },
-#     ...
-#   ]
-
-#   ## Transitions
-
-#   Store transitions in an array in a JSON file.
-
-#   Media type: application/vnd.sbt.transitions+json
-#   Contains: [
-#     {
-#       "model": {
-#         "name": "double-gaussian",
-#         "parameters": {
-#           "center": time point in microseconds (UTC),
-#           "scale": real value,
-#           "width": real value,
-#           "offset": time duration
-#         }
-#       }
-#     },
-#     ...
-#   ]

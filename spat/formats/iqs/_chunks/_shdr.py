@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, BinaryIO, ClassVar
 
 from .._errors import IqsError
-from .._io_utilities import write_int
+from .._io_utilities import read_int, write_int
 
 if TYPE_CHECKING:
     from ._ihdr import IhdrChunk
@@ -35,6 +35,16 @@ class ShdrChunk:
             raise IqsError("Channels are heterogenous")
         channel_header = next(iter(channel_headers))
         return cls(channel_header.time_step_ns, channel_header.max_amplitude)
+
+    @classmethod
+    def from_io(cls, io: BinaryIO) -> ShdrChunk:
+        """Deserialize the IO stream into an SHDR chunk.
+
+        May raise `IqsError` or one of its derivatives.
+        """
+        time_step_ns = read_int(io, 4)
+        max_amplitude = read_int(io, 4)
+        return cls(time_step_ns, max_amplitude)
 
     def to_io(self, io: BinaryIO) -> None:
         """Serialize this chunk to the IO stream.

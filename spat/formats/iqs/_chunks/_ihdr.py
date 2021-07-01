@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import BinaryIO, ClassVar
+from typing import TYPE_CHECKING, BinaryIO, ClassVar
 
 from .._io_utilities import (
     read_int,
@@ -9,6 +9,9 @@ from .._io_utilities import (
     write_int,
     write_terminated_string,
 )
+
+if TYPE_CHECKING:
+    from ._shdr import ShdrChunk
 
 
 @dataclass(frozen=True)
@@ -29,13 +32,24 @@ class IhdrChunk(dict[str, SiteHeader]):
     type_: ClassVar[bytes] = b"IHDR"
 
     @classmethod
+    def from_shdr(cls, shdr: "ShdrChunk", *, site_name: str) -> IhdrChunk:
+        """Convert the SHDR chunk into an IHDR chunk.
+
+        Doesn't raise any exceptions.
+        """
+        channel_header = ChannelHeader(shdr.time_step_ns, 4, shdr.max_amplitude)
+        site: SiteHeader = {"hf": channel_header, "lf": channel_header}
+        sites: dict[str, SiteHeader] = {site_name: site}
+        return cls(sites)
+
+    @classmethod
     def from_io(cls, io: BinaryIO) -> IhdrChunk:
         """Deserialize the IO stream into an IHDR chunk.
 
         May raise `IqsError` or one of its derivatives.
         """
         number_of_sites = read_int(io, 4)
-        ihdr_value: dict[str, SiteHeader] = dict()
+        sites: dict[str, SiteHeader] = dict()
         for _ in range(number_of_sites):
             site_name = read_terminated_string(io, 256)  # E.g.: "site0"
             number_of_channels = read_int(io, 4)
@@ -52,8 +66,8 @@ class IhdrChunk(dict[str, SiteHeader]):
                 channel_header = ChannelHeader(time_step_ns, byte_depth, max_amplitude)
                 site_header[channel_name] = channel_header
             # Add site header to chunk
-            ihdr_value[site_name] = site_header
-        return cls(ihdr_value)
+            sites[site_name] = site_header
+        return cls(sites)
 
     def to_io(self, io: BinaryIO) -> None:
         """Serialize this chunk to the IO stream.

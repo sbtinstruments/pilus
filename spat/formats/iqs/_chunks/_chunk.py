@@ -12,14 +12,18 @@ from ._shdr import ShdrChunk
 
 
 @dataclass(frozen=True)
-class NonCriticalChunk:
+class UnidentifiedAncilliaryChunk:
     """Non-critical chunk."""
 
 
-Chunk = Union[NonCriticalChunk, IhdrChunk, IdatChunk, ShdrChunk, SdatChunk]
+HeaderChunk = Union[IhdrChunk, ShdrChunk]
+DataChunk = Union[IdatChunk, SdatChunk]
+Chunk = Union[HeaderChunk, DataChunk, UnidentifiedAncilliaryChunk]
 
 
-def read_chunk(io: BinaryIO, *, ihdr: Optional[IhdrChunk] = None) -> Optional[Chunk]:
+def read_chunk(
+    io: BinaryIO, *, header: Optional[HeaderChunk] = None
+) -> Optional[Chunk]:
     """Read IQS chunk.
 
     May raise `IqsError` or one of its derivatives.
@@ -32,7 +36,7 @@ def read_chunk(io: BinaryIO, *, ihdr: Optional[IhdrChunk] = None) -> Optional[Ch
     chunk_type = read_exactly(io, 4)
     # Read chunk data
     chunk_data = read_exactly(io, chunk_length)
-    chunk = _deserialize_chunk_data(chunk_type, chunk_data, ihdr=ihdr)
+    chunk = _deserialize_chunk_data(chunk_type, chunk_data, header=header)
     # CRC check
     actual_crc = _chunk_crc(chunk_type, chunk_data)
     expected_crc = read_int(io, 4)
@@ -63,7 +67,7 @@ def _deserialize_chunk_data(
     chunk_type: bytes,
     chunk_data: bytes,
     *,
-    ihdr: Optional[IhdrChunk] = None,
+    header: Optional[HeaderChunk] = None,
 ) -> Chunk:
     """Read and parse chunk data of the given type and length.
 
@@ -83,23 +87,43 @@ def _deserialize_chunk_data(
     # TODO: Add support for the non-critical "sYSI" (system information) chunk
     # if chunk_type == "sYSI":
     #     return _read_sysi(io, chunk_length)
+    # IHDR
     if chunk_type == IhdrChunk.type_:
-        if ihdr is not None:
-            raise IqsError("Encountered multiple IHDR chunks. There can only be one.")
+        if header is not None:
+            raise IqsError("Encountered multiple header chunks. There can only be one.")
         return IhdrChunk.from_io(chunk_data_io)
+    # SHDR
+    if chunk_type == ShdrChunk.type_:
+        if header is not None:
+            raise IqsError("Encountered multiple header chunks. There can only be one.")
+        return ShdrChunk.from_io(chunk_data_io)
+    # IDAT
     if chunk_type == IdatChunk.type_:
-        if ihdr is None:
-            raise IqsError("Encountered IDAT chunk before IHDR chunk.")
-        return IdatChunk.from_io(chunk_data_io, ihdr=ihdr)
+        if not isinstance(header, IhdrChunk):
+            raise IqsError("An IHDR chunk must precede an IDAT chunk.")
+        return IdatChunk.from_io(chunk_data_io, ihdr=header)
+    # SDAT
+    if chunk_type == SdatChunk.type_:
+        if not isinstance(header, ShdrChunk):
+            raise IqsError("An SHDR chunk must precede an SDAT chunk.")
+        return SdatChunk.from_io(chunk_data_io, data_length=len(chunk_data))
+    # All chunk types are in ASCII
+    try:
+        chunk_type_name = chunk_type.decode("ascii")
+    except UnicodeDecodeError as exc:
+        raise IqsError("Invalid chunk type") from exc
     # We don't reckognize the chunk type.
     # Check the so-called "ancilliary bit" to see if it's an:
     #   1. Ancilliary chunk (optional)
     #   2. Critical chunk (required)
-    chunk_is_ancilliary = bool(chunk_type[0] & 0b10000)
+    chunk_is_ancilliary = chunk_type_name[0].islower()
+
+    print(f"{chunk_type_name=} {chunk_is_ancilliary=}")
+
     if not chunk_is_ancilliary:
         # Raise an error if we can't deserialize a critical chunk
-        raise IqsError("Encountered unknown critical chunk")
-    return NonCriticalChunk()
+        raise IqsError(f'Encountered unknown critical chunk: "{chunk_type_name}"')
+    return UnidentifiedAncilliaryChunk()
 
 
 def write_chunk(

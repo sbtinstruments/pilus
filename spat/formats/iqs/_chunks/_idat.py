@@ -2,11 +2,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import BinaryIO, ClassVar, Optional
+from typing import TYPE_CHECKING, BinaryIO, ClassVar, Optional
 
 from .._errors import IqsError
 from .._io_utilities import read_exactly, read_int, write_exactly, write_int
 from ._ihdr import IhdrChunk
+
+if TYPE_CHECKING:
+    from ._sdat import SdatChunk
 
 
 @dataclass(frozen=True)
@@ -117,6 +120,34 @@ class IdatChunk:
                     f"The threshold is {threshold_us:.2f} µs."
                 )
             previous_chunk = chunk
+
+    @classmethod
+    def from_sdat(
+        cls, sdat: "SdatChunk", *, site_name: str, time_step_ns: int
+    ) -> IdatChunk:
+        """Convert the SDAT chunk into an IDAT chunk.
+
+        May raise:
+          * `RuntimeError` if the platform doesn't natively support 4-byte integers.
+        """
+        # We de-interleave the data first
+        format_string = "i"  # 4-byte integer
+        interleaved = memoryview(sdat.interleaved_data).cast(format_string)
+        if interleaved.itemsize != 4:
+            raise RuntimeError("The native integer size must be 4 bytes")
+        hf_re = interleaved[0::4].tobytes()
+        hf_im = interleaved[1::4].tobytes()
+        lf_re = interleaved[2::4].tobytes()
+        lf_im = interleaved[3::4].tobytes()
+        hf_channel = ChannelData(hf_re, hf_im)
+        lf_channel = ChannelData(lf_re, lf_im)
+        site: SiteData = {
+            "hf": hf_channel,
+            "lf": lf_channel,
+        }
+        sites: dict[str, SiteData] = {site_name: site}
+        duration_ns = time_step_ns * len(hf_re) // 4
+        return cls(sdat.start_time, duration_ns, sites)
 
     @classmethod
     def from_io(cls, io: BinaryIO, *, ihdr: IhdrChunk) -> IdatChunk:

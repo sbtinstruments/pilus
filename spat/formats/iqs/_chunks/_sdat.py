@@ -5,13 +5,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, BinaryIO, ClassVar
 
 from .._errors import IqsError
-from .._io_utilities import (
-    read_int,
-    read_terminated_string,
-    write_exactly,
-    write_int,
-    write_terminated_string,
-)
+from .._io_utilities import read_exactly, read_int, write_exactly, write_int
 
 if TYPE_CHECKING:
     from ._idat import IdatChunk
@@ -71,6 +65,17 @@ class SdatChunk:
         timestamp_us = int(self.start_time.timestamp() * 1e6)
         write_int(io, timestamp_us, 8)
         write_exactly(io, self.interleaved_data)
+
+    @classmethod
+    def from_io(cls, io: BinaryIO, *, data_length: int) -> SdatChunk:
+        """Deserialize the IO stream into an SDAT chunk.
+
+        May raise `IqsError` or one of its derivatives.
+        """
+        timestamp_us = read_int(io, 8)
+        start_time = datetime.fromtimestamp(timestamp_us * 1e-6)
+        interleaved_data = read_exactly(io, data_length - 8)
+        return cls(start_time, interleaved_data)
 
     def data_length(self) -> int:
         """Return the byte size of this chunk in serialized form."""

@@ -6,33 +6,37 @@ from pydantic import validator
 
 from ...model import Model, add_media_type
 from ._snip_attributes import (
-    SnipAttribute,
-    SnipAttributeDeclaration,
+    SnipAttr,
+    SnipAttrDecl,
     SnipEnum,
-    SnipEnumDeclaration,
+    SnipEnumDecl,
     SnipInt,
-    SnipIntDeclaration,
+    SnipIntDecl,
     SnipStr,
-    SnipStrDeclaration,
+    SnipStrDecl,
 )
 
 # TODO: Replace `dict` with `immutables.Map` when pydantic supports custom
 # data types.
-_RootType = dict[str, SnipAttributeDeclaration]
+_RootType = dict[str, SnipAttrDecl]
 
 
 @add_media_type("application/vnd.sbt.snip.attributes+json")
-class SnipAttributeDeclarationMap(Model):
+class SnipAttrDeclMap(Model):
     """Attribute declarations for snip."""
 
-    __root__: _RootType
+    __root__: _RootType = dict()
 
     @property
-    def enums(self) -> Iterable[tuple[str, SnipEnumDeclaration]]:
+    def enums(self) -> Iterable[tuple[str, SnipEnumDecl]]:
         """Return all (name, enum) pairs."""
         return _get_enums(self.__root__)
 
-    def parse_kwargs(self, **kwargs: str) -> Iterable[tuple[str, SnipAttribute]]:
+    def has_declarations_for(self, attributes: Iterable[SnipAttr]) -> bool:
+        """Has declarations for all of the given attributes."""
+        return all(a.declaration in self.__root__.values() for a in attributes)
+
+    def parse_kwargs(self, **kwargs: str) -> Iterable[tuple[str, SnipAttr]]:
         """Return all (name, attribute) pairs based on the kwargs."""
         for name, value in kwargs.items():
             # Find type
@@ -41,17 +45,17 @@ class SnipAttributeDeclarationMap(Model):
             except KeyError as exc:
                 raise ValueError(f'There is no attribute named "{name}"') from exc
             # Int
-            if isinstance(declaration, SnipIntDeclaration):
+            if isinstance(declaration, SnipIntDecl):
                 if not isinstance(value, int):
                     raise ValueError(f'The value "{value}" is not an integer')
                 yield (name, SnipInt(declaration=declaration, value=value))
             # Str
-            elif isinstance(declaration, SnipStrDeclaration):
+            elif isinstance(declaration, SnipStrDecl):
                 if not isinstance(value, str):
                     raise ValueError(f'The value "{value}" is not a string')
                 yield (name, SnipStr(declaration=declaration, value=value))
             # Enum
-            elif isinstance(declaration, SnipEnumDeclaration):
+            elif isinstance(declaration, SnipEnumDecl):
                 if value not in declaration.values:
                     raise ValueError(
                         f'There is no value named "{value}" in the "{name}" enum'
@@ -60,11 +64,11 @@ class SnipAttributeDeclarationMap(Model):
 
     def parse_raw_attributes(
         self, raw_attributes: Iterable[str]
-    ) -> Iterable[tuple[str, SnipAttribute]]:
+    ) -> Iterable[tuple[str, SnipAttr]]:
         """Return all (name, attribute) pairs based on the raw string attributes."""
         return (self.parse_raw_attribute(s) for s in raw_attributes)
 
-    def parse_raw_attribute(self, raw_attribute: str) -> tuple[str, SnipAttribute]:
+    def parse_raw_attribute(self, raw_attribute: str) -> tuple[str, SnipAttr]:
         """Return a (name, attribute) pair based on the raw string attribute."""
         parts = raw_attribute.split("=")
         len_parts = len(parts)
@@ -85,13 +89,13 @@ class SnipAttributeDeclarationMap(Model):
             except KeyError as exc:
                 raise ValueError(f'There is no attribute named "{name}"') from exc
             # Int
-            if isinstance(declaration, SnipIntDeclaration):
+            if isinstance(declaration, SnipIntDecl):
                 return (name, SnipInt(declaration=declaration, value=int(raw_value)))
             # Str
-            if isinstance(declaration, SnipStrDeclaration):
+            if isinstance(declaration, SnipStrDecl):
                 return (name, SnipStr(declaration=declaration, value=raw_value))
             # Enum
-            if isinstance(declaration, SnipEnumDeclaration):
+            if isinstance(declaration, SnipEnumDecl):
                 if raw_value not in declaration.values:
                     raise ValueError(
                         f'There is no value named "{raw_value}" in the "{name}" enum'
@@ -122,7 +126,5 @@ def _get_enum_values(types: _RootType) -> Iterable[str]:
         yield from enum.values
 
 
-def _get_enums(types: _RootType) -> Iterable[tuple[str, SnipEnumDeclaration]]:
-    return (
-        (name, t) for name, t in types.items() if isinstance(t, SnipEnumDeclaration)
-    )
+def _get_enums(types: _RootType) -> Iterable[tuple[str, SnipEnumDecl]]:
+    return ((name, t) for name, t in types.items() if isinstance(t, SnipEnumDecl))

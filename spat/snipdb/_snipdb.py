@@ -13,13 +13,13 @@ from spat.formats import iqs, snip
 
 from ..formats.registry import add_deserializer
 from ..formats.snip import (
-    SnipAttribute,
-    SnipAttributeDeclarationMap,
+    SnipAttr,
+    SnipAttrDeclMap,
     SnipAttributeMap,
     SnipPart,
     SnipPartMetadata,
 )
-from ._snip_from_iqs import iqs_to_attribute_declaration, iqs_to_snip_parts
+from ._snip_from_iqs import iqs_to_attr_decls, iqs_to_snip_parts
 
 T = TypeVar("T")
 
@@ -78,8 +78,8 @@ class SnipDb:
 
     def __init__(
         self,
-        parts: Iterable[SnipPart[Any]],
-        attribute_declarations: SnipAttributeDeclarationMap,
+        parts: Iterable[SnipPart[Any]] = tuple(),
+        attr_decls: SnipAttrDeclMap = SnipAttrDeclMap(),
     ) -> None:
         self._db = TinyDB(storage=MemoryStorage)
         documents = (
@@ -92,13 +92,15 @@ class SnipDb:
         )
         self._parts = self._db.table("part")
         self._parts.insert_multiple(documents)
-        self._attribute_declarations = attribute_declarations
+        # Ensure that the parts' attributes have corresponding declarations in the
+        # given declaration map.
+        attributes = (a for p in self for a in p.metadata.attributes.values())
+        if not attr_decls.has_declarations_for(attributes):
+            raise ValueError("A part has an undeclared attribute")
+        self._attr_decls = attr_decls
 
     def get(
-        self,
-        type_: Optional[Type[T]] = None,
-        name: Optional[str] = None,
-        **kwargs: Any,
+        self, type_: Optional[Type[T]] = None, name: Optional[str] = None, **kwargs: Any
     ) -> Optional[SnipPart[T]]:
         """Return the first part that matches the query arguments.
 
@@ -111,10 +113,7 @@ class SnipDb:
         return _doc_to_part(document)
 
     def search(
-        self,
-        type_: Optional[Type[T]] = None,
-        name: Optional[str] = None,
-        **kwargs: Any,
+        self, type_: Optional[Type[T]] = None, name: Optional[str] = None, **kwargs: Any
     ) -> Iterable[SnipPart[T]]:
         """Return iterable of all parts that matches the query arguments."""
         query = self._args_to_query(type_, name, **kwargs)
@@ -122,16 +121,13 @@ class SnipDb:
         return (_doc_to_part(doc) for doc in documents)
 
     def _args_to_query(
-        self,
-        type_: Optional[type] = None,
-        name: Optional[str] = None,
-        **kwargs: str,
+        self, type_: Optional[type] = None, name: Optional[str] = None, **kwargs: str
     ) -> QueryInstance:
-        AttributeNameAndValues = frozenset[tuple[str, SnipAttribute]]
+        AttributeNameAndValues = frozenset[tuple[str, SnipAttr]]
         attributes: Optional[AttributeNameAndValues] = None
         # Consider all keyword arguments as attribute filters
         if kwargs:
-            attributes = frozenset(self._attribute_declarations.parse_kwargs(**kwargs))
+            attributes = frozenset(self._attr_decls.parse_kwargs(**kwargs))
         # Convert argument to queries
         queries: list[QueryInstance] = []
         if type_ is not None:
@@ -182,18 +178,16 @@ class SnipDb:
     @classmethod
     def from_iqs_io(cls, io: BinaryIO) -> SnipDb:
         """Convert IQS IO stream to an instance of this class."""
-        iqs_chunks = iqs.from_io(io)
-        # TODO: Rework the `IqsChunks` class. Combine header and data somehow.
-        return cls.from_iqs_chunks(iqs_chunks)
+        iqs_aggregate = iqs.from_io(io)
+        if iqs_aggregate is None:
+            return cls()
+        return cls.from_iqs_aggregate(iqs_aggregate)
 
     @classmethod
-    def from_iqs_chunks(cls, iqs_chunks: iqs.IqsChunks) -> SnipDb:
-        """Convert IQS chunks to an instance of this class."""
-        attribute_declarations = iqs_to_attribute_declaration(iqs_chunks)
-        return cls(
-            iqs_to_snip_parts(iqs_chunks, attribute_declarations),
-            attribute_declarations,
-        )
+    def from_iqs_aggregate(cls, iqs_aggregate: iqs.IqsAggregate) -> SnipDb:
+        """Convert IQS aggregate to an instance of this class."""
+        attr_decls = iqs_to_attr_decls(iqs_aggregate)
+        return cls(iqs_to_snip_parts(iqs_aggregate, attr_decls), attr_decls)
 
     def __iter__(self) -> Iterable[SnipPart[Any]]:
         """Return iterable of all parts in this database."""

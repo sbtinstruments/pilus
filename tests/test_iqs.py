@@ -16,7 +16,7 @@ def test_iqs_from_io(fs: FakeFilesystem) -> None:
     with data_file.open("rb") as io:
         data = iqs.from_io(io)
     assert data is not None
-    duration_s = data.idat.duration_ns * 1e-9
+    duration_s = data.duration_ns * 1e-9
     print(f"{duration_s=:.1f}")
 
     export_file = Path("data_export.iqs")
@@ -26,7 +26,7 @@ def test_iqs_from_io(fs: FakeFilesystem) -> None:
     with export_file.open("rb") as io:
         data_imported = iqs.from_io(io)
     assert data_imported is not None
-    imported_duration_s = data_imported.idat.duration_ns * 1e-9
+    imported_duration_s = data_imported.duration_ns * 1e-9
     print(f"{imported_duration_s=:.1f}")
 
     assert duration_s == imported_duration_s
@@ -38,7 +38,7 @@ def test_iqs_from_io(fs: FakeFilesystem) -> None:
     with export_v1_file.open("rb") as io:
         data_v1_imported = iqs.from_io(io)
     assert data_v1_imported is not None
-    imported_v1_duration_s = data_v1_imported.idat.duration_ns * 1e-9
+    imported_v1_duration_s = data_v1_imported.duration_ns * 1e-9
     print(f"{imported_v1_duration_s=:.1f}")
 
     assert imported_duration_s == imported_v1_duration_s

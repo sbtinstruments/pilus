@@ -1,7 +1,7 @@
-from dataclasses import dataclass
 from enum import Enum, auto
 from typing import BinaryIO, Optional, Union
 
+from ._aggregate import IqsAggregate
 from ._chunks import (
     DataChunk,
     HeaderChunk,
@@ -24,18 +24,10 @@ class IqsVersion(Enum):
     V2_0_0 = auto()
 
 
-@dataclass(frozen=True)
-class IqsChunks:
-    """Raw IQS chunks."""
-
-    ihdr: IhdrChunk
-    idat: IdatChunk
-
-
 def from_io(
     io: BinaryIO, *, version_1_0_0_site_name: Optional[str] = None
-) -> Optional[IqsChunks]:
-    """Deserialize IO stream into an IQS instance.
+) -> Optional[IqsAggregate]:
+    """Deserialize IO stream into an IQS aggregate.
 
     May raise `IqsError` or one of its derivatives.
 
@@ -62,7 +54,7 @@ def from_io(
         # Store all data chunks
         elif isinstance(chunk, (IdatChunk, SdatChunk)):
             data.append(chunk)
-        elif UnidentifiedAncilliaryChunk:
+        elif isinstance(chunk, UnidentifiedAncilliaryChunk):
             # Discard all unidentified ancilliary (non-critical) chunks
             pass
         # We cover all chunk types, sd we should not hit this `else`
@@ -79,34 +71,35 @@ def from_io(
     )
     # Merge all data together
     merged_idat = IdatChunk.merge_all(*idats, ihdr=ihdr)
-    return IqsChunks(ihdr, merged_idat)
+    return IqsAggregate.from_chunks(ihdr, merged_idat)
 
 
 def to_io(
-    iqs: IqsChunks,
+    aggregate: IqsAggregate,
     io: BinaryIO,
     *,
     version: IqsVersion = IqsVersion.V2_0_0,
     site_to_keep: Optional[str] = None,
 ) -> None:
-    """Serialize IQS instance to the IO stream.
+    """Serialize IQS aggregate to the IO stream.
 
     May raise:
       * `IqsError` or one of its derivatives.
       * `RuntimeError` if the platform doesn't natively support 4-byte integers.
     """
     write_signature(io)
+    ihdr, idat = aggregate.to_chunks()
     if version is IqsVersion.V2_0_0:
-        write_chunk(io, iqs.ihdr)
-        write_chunk(io, iqs.idat)
+        write_chunk(io, ihdr)
+        write_chunk(io, idat)
     elif version is IqsVersion.V1_0_0:
         if site_to_keep is None:
             raise ValueError(
                 "You must specify `site_to_keep` when you target "
                 "version 1.0.0 of the IQS specification."
             )
-        write_chunk(io, ShdrChunk.from_ihdr(iqs.ihdr, site_to_keep=site_to_keep))
-        write_chunk(io, SdatChunk.from_idat(iqs.idat, site_to_keep=site_to_keep))
+        write_chunk(io, ShdrChunk.from_ihdr(ihdr, site_to_keep=site_to_keep))
+        write_chunk(io, SdatChunk.from_idat(idat, site_to_keep=site_to_keep))
     else:
         assert False
 

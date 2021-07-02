@@ -1,14 +1,14 @@
 from ._snip import from_box, from_dir
-from ._snip_attribute_declaration_map import SnipAttributeDeclarationMap
+from ._snip_attribute_declaration_map import SnipAttrDeclMap
 from ._snip_attributes import (
-    SnipAttribute,
-    SnipAttributeDeclaration,
+    SnipAttr,
+    SnipAttrDecl,
     SnipEnum,
-    SnipEnumDeclaration,
+    SnipEnumDecl,
     SnipInt,
-    SnipIntDeclaration,
+    SnipIntDecl,
     SnipStr,
-    SnipStrDeclaration,
+    SnipStrDecl,
 )
 from ._snip_part import SnipPart
 from ._snip_part_metadata import (

@@ -7,10 +7,10 @@ from pydantic import BaseModel
 from pydantic.fields import Field
 
 from ...utility import find_duplicates, split_at_suffixes
-from ._snip_attribute_declaration_map import SnipAttributeDeclarationMap
-from ._snip_attributes import SnipAttribute
+from ._snip_attribute_declaration_map import SnipAttrDeclMap
+from ._snip_attributes import SnipAttr
 
-SnipAttributeMap = Map[str, SnipAttribute]
+SnipAttributeMap = Map[str, SnipAttr]
 
 
 class SnipPartMetadata(BaseModel):
@@ -21,7 +21,7 @@ class SnipPartMetadata(BaseModel):
 
     @classmethod
     def from_file_name(
-        cls, file_name: str, *, attribute_declarations: SnipAttributeDeclarationMap
+        cls, file_name: str, *, attr_decls: SnipAttrDeclMap
     ) -> SnipPartMetadata:
         """Split a file name into the corresponding snip components.
 
@@ -45,7 +45,7 @@ class SnipPartMetadata(BaseModel):
         name, raw_attributes = _extract_raw_attribute(rest)
         # Parse raw attributes
         attributes: SnipAttributeMap = Map(
-            attribute_declarations.parse_raw_attributes(raw_attributes)
+            attr_decls.parse_raw_attributes(raw_attributes)
         )
         return cls(name=name, attributes=attributes)
 
@@ -57,10 +57,10 @@ class SnipPartMetadata(BaseModel):
 
 
 def create_attribute_map(
-    attribute_declarations: SnipAttributeDeclarationMap, **kwargs: Any
+    attr_decls: SnipAttrDeclMap, **kwargs: Any
 ) -> SnipAttributeMap:
     """Parse the kwargs into an attribute map."""
-    return Map(attribute_declarations.parse_kwargs(**kwargs))
+    return Map(attr_decls.parse_kwargs(**kwargs))
 
 
 def _extract_raw_attribute(rest: str) -> tuple[str, frozenset[str]]:

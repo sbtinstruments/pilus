@@ -6,6 +6,7 @@ build
 dist
 *.swp
 *.spec
+*.pyc
 
 # Visual Studio Code workspace settings
 .vscode

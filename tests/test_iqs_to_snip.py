@@ -3,6 +3,7 @@ from pathlib import Path
 from pyfakefs.fake_filesystem import FakeFilesystem
 
 from spat.basic import Wave
+from spat.formats import wave as wav_format
 from spat.snipdb import SnipDb
 
 # FPA 2020-01-19: I don't want to include a large IQS file into the repo.
@@ -17,5 +18,10 @@ def test_iqs_from_io(fs: FakeFilesystem) -> None:
     with data_file.open("rb") as io:
         snip_db = SnipDb.from_iqs_io(io)
 
-    wave_metadata = [w.metadata for w in snip_db.search(Wave)]
-    print(wave_metadata)
+    wave = snip_db.get(Wave)
+    assert wave is not None
+    # print(f"{wave=}")
+
+    wave_file = Path("data.wav")
+    with wave_file.open("wb") as io:
+        wav_format.to_io(wave.value.lpcm, io)

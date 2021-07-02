@@ -8,4 +8,4 @@ class WaveMeta(Model):
     """Metadata for a wave (LPCM signal)."""
 
     start_time: datetime
-    max_value: int
+    max_amplitude: int

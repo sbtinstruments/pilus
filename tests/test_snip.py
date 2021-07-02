@@ -74,7 +74,7 @@ def test_snip(fs: FakeFilesystem) -> None:
         contents="""
             {
                 "startTime": 1231231231,
-                "maxValue": 123
+                "maxAmplitude": 123
             }
         """,
     )
@@ -109,7 +109,7 @@ def test_snip(fs: FakeFilesystem) -> None:
     wave_part = project.get(Wave)
     assert wave_part is not None
     wave = wave_part.value
-    assert wave.byte_depth == 2
+    assert wave.lpcm.byte_depth == 2
 
     wave_meta_part = project.get(WaveMeta)
     # We merge `WaveMeta` into `Wave`, so the former isn't present in the output

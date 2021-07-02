@@ -1,6 +1,6 @@
 from typing import Any, Iterable
 
-from ..basic import Wave
+from ..basic import Wave, WaveMeta
 from ..formats import iqs
 from ..formats.snip import (
     SnipAttrDecl,
@@ -10,6 +10,7 @@ from ..formats.snip import (
     SnipPartMetadata,
     create_attribute_map,
 )
+from ..formats.wave import Lpcm
 
 
 def iqs_to_attr_decls(aggregate: iqs.IqsAggregate) -> SnipAttrDeclMap:
@@ -38,12 +39,15 @@ def iqs_to_snip_parts(
     for site_name, site in aggregate.sites.items():
         for channel_name, channel in site.items():
             for part_name in ("re", "im"):
-                wave = Wave(
+                lpcm = Lpcm(
                     channel.byte_depth,
                     channel.time_step_ns,
                     getattr(channel, part_name),
-                    aggregate.start_time,
                 )
+                wave_metadata = WaveMeta(
+                    start_time=aggregate.start_time, max_amplitude=channel.max_amplitude
+                )
+                wave = Wave(lpcm, wave_metadata)
                 attributes = create_attribute_map(
                     attr_decls,
                     site=site_name,

@@ -1,3 +1,4 @@
+from datetime import timedelta
 from enum import Enum, auto
 from typing import BinaryIO, Optional, Union
 
@@ -25,7 +26,10 @@ class IqsVersion(Enum):
 
 
 def from_io(
-    io: BinaryIO, *, version_1_0_0_site_name: Optional[str] = None
+    io: BinaryIO,
+    *,
+    version_1_0_0_site_name: Optional[str] = None,
+    contiguous_tolerance: Optional[timedelta] = None,
 ) -> Optional[IqsAggregate]:
     """Deserialize IO stream into an IQS aggregate.
 
@@ -70,7 +74,9 @@ def from_io(
         for chunk in data
     )
     # Merge all data together
-    merged_idat = IdatChunk.merge_all(*idats, ihdr=ihdr)
+    merged_idat = IdatChunk.merge_all(
+        *idats, ihdr=ihdr, contiguous_tolerance=contiguous_tolerance
+    )
     return IqsAggregate.from_chunks(ihdr, merged_idat)
 
 

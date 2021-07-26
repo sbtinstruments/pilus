@@ -1,18 +1,21 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional, TYPE_CHECKING, BinaryIO, ClassVar, Union
+from typing import Any, Optional, TYPE_CHECKING, BinaryIO, ClassVar, Union
+from itertools import product
+
 from ._ahdr import AhdrChunk
 from .._errors import BdrError
 
-from ...iqs._io_utilities import (
-    read_int,
-    read_exactly
-)
+from ...iqs._io_utilities import read_int, read_exactly
+
+CHANNELS = ["".join(i) for i in list(product(*[["hf", "lf"], ["im", "re"]]))]
+
 
 @dataclass(frozen=True)
 class tRAN_segment:
     """Single chunk part tRAN chunk"""
+
     scale: float
     center: float
     width: float
@@ -29,9 +32,9 @@ class tRAN_segment:
     name: Optional[str] = None
 
     @classmethod
-    def from_io(cls, io:BinaryIO, name:Optional[str]) -> tRAN_segment:
-        """ Read tRAN chunk segment.
-        
+    def from_io(cls, io: BinaryIO, name: Optional[str]) -> tRAN_segment:
+        """Read tRAN chunk segment.
+
         See baxter/formats/bdr/_bdr.py, baxter/formats/bdr/_alg_ctypes.py
         """
         data = {}
@@ -61,6 +64,7 @@ class tRAN_segment:
         data["origin"] = read_int(io, 4)
         return cls(**data, name=name)
 
+
 @dataclass(frozen=True)
 class TranChunk:
     """Used to interpret the subsequent tRAN chunks."""
@@ -70,7 +74,7 @@ class TranChunk:
     time_range: list[dict[str, int]]
 
     @classmethod
-    def from_io(cls, io: BinaryIO, chunk_length:int , header: AhdrChunk) -> TranChunk:
+    def from_io(cls, io: BinaryIO, chunk_length: int, header: AhdrChunk) -> TranChunk:
         """Deserialize the IO stream into a tRAN chunk.
 
         May raise `IqsError` or one of its derivatives.
@@ -80,52 +84,55 @@ class TranChunk:
         n_trans = chunk_length // 400
         data = []
         data_time = []
-        for i in range(n_trans):
-        # There are ```(length) mod 400``` chunk pieces in the chunk. 
-        # A chunk piece looks like the following:
+        # There are ```(length) mod 400``` chunk segments in the chunk.
+        # A chunk segment looks like the following:
         # { start_time,
         #   end_time,
-        #   4 TPS chunks {
-        #    'hf_re'
-        #    'hf_im'
-        #    'lf_re'
-        #    'lf_im'
+        #   4TPS chunks {
+        #       'hfre'
+        #       'hfim'
+        #       'lfre'
+        #       'lfim'
         #     },
         # }
-        # start time
+        for i in range(n_trans):
+            # start time
             time_start = read_int(io, 8)
             # end time
             time_end = read_int(io, 8)
-            FIT4:dict[str,tRAN_segment] = {}
-            _ax = ['re','im']
+            FIT4: dict[str, tRAN_segment] = {}
+            _ax = ["re", "im"]
             for chnl in header.channel_name:
                 for ax in _ax:
-                    FIT4[chnl+ax] = tRAN_segment.from_io(io, chnl + "_" + ax)
+                    FIT4[chnl + ax] = tRAN_segment.from_io(io, chnl + "_" + ax)
 
             data_time.append({"time_start": time_start, "time_end": time_end})
             data.append(FIT4)
-            
+
         return cls(data=data, time_range=data_time)
 
+    @classmethod
+    def merge_all(
+        cls, *chunks: TranChunk
+    ) -> tuple[dict[str, list[tRAN_segment]], list[dict[str, int]]]:
+        # Early out if there are no chunks
+        if not chunks:
+            raise ValueError("Can't merge empty sequence of chunks")
+        first_chunk = chunks[0]
+        try:
+            chnl_names = list(first_chunk.data[0].keys())
+        except IndexError:
+            raise ValueError("Could not merge empty data chunks")
 
-    #############
-    #     number_of_sites = read_int(io, 4)
-    #     sites: dict[str, SiteHeader] = dict()
-    #     for _ in range(number_of_sites):
-    #         site_name = read_terminated_string(io, 256)  # E.g.: "site0"
-    #         number_of_channels = read_int(io, 4)
-    #         site_header: SiteHeader = dict()
-    #         for _ in range(number_of_channels):
-    #             channel_name = read_terminated_string(io, 256)  # E.g.: "hf"
-    #             time_step_ns = read_int(io, 4)
-    #             byte_depth = read_int(io, 1)
-    #             # Yes, this is actually a 64-byte integer (not a 64-bit integer).
-    #             # This is by design since byte depth theoretically goes to 64
-    #             # (though it's usually only 4).
-    #             max_amplitude = read_int(io, 64, signed=True)
-    #             # Add channel header to site header
-    #             channel_header = ChannelHeader(time_step_ns, byte_depth, max_amplitude)
-    #             site_header[channel_name] = channel_header
-    #         # Add site header to chunk
-    #         sites[site_name] = site_header
-    #     return cls(sites)
+        merged: dict[str, list[tRAN_segment]] = {k: [] for k in chnl_names}
+        time_range: list[dict[str, int]] = []
+
+        # Merge chunks into lists
+        for chunk in chunks:
+            # TranChunk
+            time_range = time_range + chunk.time_range
+            for seg in chunk.data:
+                for k, v in seg.items():
+                    merged[k].append(v)
+
+        return merged, time_range

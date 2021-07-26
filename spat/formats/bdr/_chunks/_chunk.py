@@ -37,11 +37,11 @@ def read_chunk(io: BinaryIO, header: Optional[AhdrChunk] = None) -> Optional[Chu
     # Read chunk data
     chunk_data = read_exactly(io, chunk_length)
     chunk = _deserialize_chunk_data(chunk_type, chunk_data, header=header, length=chunk_length)
-    # # CRC check
-    # actual_crc = _chunk_crc(chunk_type, chunk_data)
+    # CRC check
+    actual_crc = _chunk_crc(chunk_type, chunk_data)
     expected_crc = read_int(io, 4)
-    # if actual_crc != expected_crc:
-    #     raise BdrError("CRC mismatch")
+    if actual_crc != expected_crc:
+        raise BdrError("CRC mismatch")
     return chunk
 
 
@@ -98,9 +98,7 @@ def _deserialize_chunk_data(
     except UnicodeDecodeError as exc:
         raise BdrError("Invalid chunk type") from exc
     # We don't recognize the chunk type.
-    # Check the so-called "ancilliary bit" to see if it's an:
-    #   1. Ancilliary chunk (optional)
-    #   2. Critical chunk (required)
+
     chunk_is_ancilliary = chunk_type_name[0].islower()
     if not chunk_is_ancilliary:
         # Raise an error if we can't deserialize a critical chunk

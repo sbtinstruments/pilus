@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, BinaryIO, ClassVar, Optional
+from typing import BinaryIO, ClassVar
 
-from .._errors import BdrError
-from ...iqs._io_utilities import read_exactly, read_int, read_terminated_string
+from ...iqs._io_utilities import read_int, read_terminated_string
 
 
 @dataclass(frozen=True)
@@ -13,7 +11,7 @@ class AhdrChunk:
     """LPCM signal data."""
 
     type_: ClassVar[bytes] = b"AHDR"
-    site_name : str
+    site_name: str
     channel_name: list[str]
     time_start: int
     time_end: int

@@ -1,1 +1,1 @@
-from ._iqs import from_io, to_io, IqsVersion
+from ._iqs import from_io, to_io, IqsVersion, Iqs

@@ -78,7 +78,7 @@ if __name__ == "__main__":
     conf_path = os.path.dirname(os.path.realpath(__file__)) + '/labqt_config.json'
     config = ProcessConfig(labqt_path, conf_path)
     config.delete_site_iqs = False
-    file_path = os.path.dirname(os.path.realpath(__file__)) + "/2um_100e5-20210203-102759-A94.iqs"
+    #file_path = os.path.dirname(os.path.realpath(__file__)) + "/2um_100e5-20210203-102759-A94.iqs"
     #root_dir = "/media/jonatan/20BCC727BCC6F5F6/FromUbuntu/pump_speeds/2021-06-04 Pump speed listeria coli 1;10 PBS"
     root_dir = "/home/jonatan/dev/misc/calibration-conversion-beads/2021-06-30 5FCs 1Box QC checks/BB files/iqs"
     # process_iqs_file(file_path, config)

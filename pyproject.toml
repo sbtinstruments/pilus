@@ -9,7 +9,7 @@ name = "spat"
 version = "0.1.0"
 
 [tool.poetry.dependencies]
-immutables = "^0.14"
+immutables = "^0.16"
 python = "^3.9"
 scipy = "^1.5"
 pydantic = "^1.8.1"

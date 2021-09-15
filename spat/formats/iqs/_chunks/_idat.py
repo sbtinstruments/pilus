@@ -63,7 +63,11 @@ class IdatChunk:
         cls.raise_if_not_contiguous(*chunks, tolerance=contiguous_tolerance)
         # Compute the total duration. We need this to pre-allocate memory
         # inside the loop.
-        total_duration_ns = sum(c.duration_ns for c in chunks)
+        # Note that `total_duration_ns` is NOT a multiple of `time_step_ns`
+        # at this point. We account for this fact inside the for loop
+        total_duration_ns = int(  # [1]
+            (chunks[-1].end_time - chunks[0].start_time).total_seconds() * 1e9
+        )
         # Go through the site/channel hierarchy based on that of the first chunk.
         # We assume that the subsequent chunks follow the same hierarchy.
         merged_value: dict[str, SiteData] = dict()
@@ -71,27 +75,46 @@ class IdatChunk:
             merged_site: SiteData = dict()
             for channel_name in site_data:
                 channel_header = ihdr[site_name][channel_name]
-                if total_duration_ns % channel_header.time_step_ns != 0:
-                    raise IqsError(
-                        "Total duration is not a multiple of the IHDR time step"
-                    )
+                # Make sure that the rough computation of `total_duration_ns` at [1]
+                # is a multiple of `time_step_ns`.
+                # Note that this subtraction only has effect the first time. The
+                # remainder is always zero on subsequent iterations (see [2]).
+                total_duration_ns -= total_duration_ns % channel_header.time_step_ns
+                assert total_duration_ns % channel_header.time_step_ns == 0  # [2]
                 total_logical_length = total_duration_ns // channel_header.time_step_ns
                 total_byte_length = total_logical_length * channel_header.byte_depth
                 # We pre-allocate the memory up front. This avoids a lot of memory
                 # allocations inside the for loop itself.
                 merged_re = bytearray(total_byte_length)
                 merged_im = bytearray(total_byte_length)
-                offset = 0
                 for chunk in chunks:
+                    # We compute `offset` based on the chunk's start time to
+                    # account for non-overlapping chunks. E.g., if the system time
+                    # suddenly jumped ahead/behind during the IQS save.
+                    start_delta = chunk.start_time - first_chunk.start_time
+                    start_delta_ns = start_delta.total_seconds() * 1e9
+                    offset = (
+                        int(start_delta_ns // channel_header.time_step_ns)
+                        * channel_header.byte_depth
+                    )
                     site = chunk.sites[site_name]
                     channel = site[channel_name]
                     length = len(channel.re)
                     assert length == len(channel.im)
                     merged_re[offset : offset + length] = channel.re
                     merged_im[offset : offset + length] = channel.im
-                    offset += length
-                assert offset == total_byte_length
-                merged_channel = ChannelData(bytes(merged_re), bytes(merged_im))
+                # Bound the data because the last chunk may extend a bit beyond
+                # the `total_byte_length`. We expect this to occur since we round
+                # down at [1] and [2].
+                merged_re_bound = merged_re[0:total_byte_length]
+                merged_im_bound = merged_im[0:total_byte_length]
+                merged_channel = ChannelData(
+                    bytes(merged_re_bound),
+                    bytes(merged_im_bound),
+                )
+                # Check that our bounds hold
+                assert len(merged_channel.re) == total_byte_length
+                assert len(merged_channel.im) == total_byte_length
                 merged_site[channel_name] = merged_channel
             merged_value[site_name] = merged_site
         return cls(first_chunk.start_time, total_duration_ns, merged_value)

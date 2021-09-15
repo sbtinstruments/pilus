@@ -63,7 +63,9 @@ class IdatChunk:
         cls.raise_if_not_contiguous(*chunks, tolerance=contiguous_tolerance)
         # Compute the total duration. We need this to pre-allocate memory
         # inside the loop.
-        total_duration_ns = sum(c.duration_ns for c in chunks)
+        total_duration_ns = int(
+            (chunks[-1].end_time - chunks[0].start_time).total_seconds() * 1e3
+        )
         # Go through the site/channel hierarchy based on that of the first chunk.
         # We assume that the subsequent chunks follow the same hierarchy.
         merged_value: dict[str, SiteData] = dict()
@@ -82,7 +84,14 @@ class IdatChunk:
                 merged_re = bytearray(total_byte_length)
                 merged_im = bytearray(total_byte_length)
                 offset = 0
+                previous_chunk: Optional[IdatChunk] = None
                 for chunk in chunks:
+                    # Compensate for non-contiguous chunks
+                    if previous_chunk is not None:
+                        delta = previous_chunk.end_time - chunk.start_time
+                        delta_ns = delta.total_seconds() * 1e3
+                        delta_samples = int(delta_ns // channel_header.time_step_ns)
+                        offset += delta_samples
                     site = chunk.sites[site_name]
                     channel = site[channel_name]
                     length = len(channel.re)
@@ -90,6 +99,7 @@ class IdatChunk:
                     merged_re[offset : offset + length] = channel.re
                     merged_im[offset : offset + length] = channel.im
                     offset += length
+                    previous_chunk = chunk
                 assert offset == total_byte_length
                 merged_channel = ChannelData(bytes(merged_re), bytes(merged_im))
                 merged_site[channel_name] = merged_channel

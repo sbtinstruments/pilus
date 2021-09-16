@@ -101,11 +101,22 @@ class IdatChunk:
                     channel = site[channel_name]
                     length = len(channel.re)
                     assert length == len(channel.im)
+                    # [3] Note that `bytearray` is pretty lenient about splicing:
+                    #
+                    #   >>> x = bytearray(3)
+                    #   >>> len(x)
+                    #   3
+                    #   >>> x[1:7] = bytes(7)
+                    #   >>> len(x)
+                    #   8
+                    #
+                    # In other words, `bytearray` allows us not only to modify
+                    # its contents but also to go beyond the existing bounds.
                     merged_re[offset : offset + length] = channel.re
                     merged_im[offset : offset + length] = channel.im
                 # Bound the data because the last chunk may extend a bit beyond
                 # the `total_byte_length`. We expect this to occur since we round
-                # down at [1] and [2].
+                # down at [1] and [2] and because of [3].
                 merged_re_bound = merged_re[0:total_byte_length]
                 merged_im_bound = merged_im[0:total_byte_length]
                 merged_channel = ChannelData(

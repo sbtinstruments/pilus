@@ -7,7 +7,7 @@ from itertools import product
 from ._ahdr import AhdrChunk
 from .._errors import BdrError
 
-from ...iqs._io_utilities import read_int, read_exactly
+from ...iqs._io_utilities import read_int, read_double
 
 CHANNELS = ["".join(i) for i in list(product(*[["hf", "lf"], ["im", "re"]]))]
 
@@ -27,6 +27,7 @@ class tRAN_segment:
     mse: float
     noise: float
     snr: float
+    ascend: float
     iterations: int
     origin: int
     name: Optional[str] = None
@@ -39,25 +40,27 @@ class tRAN_segment:
         """
         data = {}
         # scale[ctypes.c_double]
-        data["scale"] = read_int(io, 8)
+        data["scale"] = read_double(io)
         # center[ctypes.c_double]
-        data["center"] = read_int(io, 8)
+        data["center"] = read_double(io)
         # width[ctypes.c_double]
-        data["width"] = read_int(io, 8)
+        data["width"] = read_double(io)
         # baseline[ctypes.c_double]
-        data["baseline"] = read_int(io, 8)
+        data["baseline"] = read_double(io)
         # offset[ctypes.c_double]
-        data["offset"] = read_int(io, 8)
+        data["offset"] = read_double(io)
         # peak_height[ctypes.c_double]
-        data["peak_height"] = read_int(io, 8)
+        data["peak_height"] = read_double(io)
         # transition_time[ctypes.c_double]
-        data["transition_time"] = read_int(io, 8)
+        data["transition_time"] = read_double(io)
         # mse[ctypes.c_double]
-        data["mse"] = read_int(io, 8)
+        data["mse"] = read_double(io)
         # noise[ctypes.c_double]
-        data["noise"] = read_int(io, 8)
+        data["noise"] = read_double(io)
         # snr[ctypes.c_double]
-        data["snr"] = read_int(io, 8)
+        data["snr"] = read_double(io)
+        # ascend[ctypes.c_double] Marcos: make up just to add up 400 bytes chunk length
+        data["ascend"] = read_double(io)
         # iterations[ctypes.int]
         data["iterations"] = read_int(io, 4)
         # origin[ctypes.int]
@@ -97,9 +100,9 @@ class TranChunk:
         # }
         for i in range(n_trans):
             # start time
-            time_start = read_int(io, 8)
+            time_start = read_double(io)
             # end time
-            time_end = read_int(io, 8)
+            time_end = read_double(io)
             FIT4: dict[str, tRAN_segment] = {}
             _ax = ["re", "im"]
             for chnl in header.channel_name:

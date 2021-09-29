@@ -1,5 +1,6 @@
 from io import SEEK_CUR
 from typing import BinaryIO
+from struct import unpack
 
 from ._errors import (
     IqsError,
@@ -25,6 +26,17 @@ def read_int(io: BinaryIO, size: int, *, signed: bool = False) -> int:
         return int.from_bytes(data, byteorder=IQS_BYTE_ORDER, signed=signed)
     except ValueError as exc:
         raise IqsError("Could not decode integer") from exc
+
+
+def read_double(io: BinaryIO) -> float:
+    """Read double of the given 8 byte size."""
+
+    data = read_exactly(io, 8)
+    try:
+        (d,) = unpack("d", data)
+        return d
+    except ValueError as exc:
+        raise IqsError("Could not decode double") from exc
 
 
 def read_terminated_string(

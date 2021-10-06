@@ -73,6 +73,7 @@ class TranChunk:
     """Used to interpret the subsequent tRAN chunks."""
 
     type_: ClassVar[bytes] = b"tRAN"
+    header: AhdrChunk
     data: list[dict[str, tRAN_segment]]
     time_range: list[dict[str, int]]
 
@@ -112,12 +113,12 @@ class TranChunk:
             data_time.append({"time_start": time_start, "time_end": time_end})
             data.append(FIT4)
 
-        return cls(data=data, time_range=data_time)
+        return cls(header=header, data=data, time_range=data_time)
 
     @classmethod
     def merge_all(
         cls, *chunks: TranChunk
-    ) -> tuple[dict[str, list[tRAN_segment]], list[dict[str, int]]]:
+    ) -> tuple[list[AhdrChunk], dict[str, list[tRAN_segment]], list[dict[str, int]]]:
         # Early out if there are no chunks
         if not chunks:
             raise ValueError("Can't merge empty sequence of chunks")
@@ -127,6 +128,7 @@ class TranChunk:
         except IndexError:
             raise ValueError("Could not merge empty data chunks")
 
+        header: list[AhdrChunk] = []
         merged: dict[str, list[tRAN_segment]] = {k: [] for k in chnl_names}
         time_range: list[dict[str, int]] = []
 
@@ -134,8 +136,9 @@ class TranChunk:
         for chunk in chunks:
             # TranChunk
             time_range = time_range + chunk.time_range
+            header.append(chunk.header)
             for seg in chunk.data:
                 for k, v in seg.items():
                     merged[k].append(v)
 
-        return merged, time_range
+        return header, merged, time_range

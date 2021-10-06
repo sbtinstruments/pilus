@@ -1,1 +1,1 @@
-from ._bdr import from_io
+from ._bdr import Bdr

@@ -12,7 +12,7 @@ def merge_snip_parts(parts: Iterable[SnipPart[Any]]) -> Iterable[SnipPart[Any]]:
     """Merge snip parts with the globally-registered mergers.
 
     Parts with identical metadata is up for merge.
-    All parts have unique metadata, this function does nothing.
+    If all parts have unique metadata, this function does nothing.
     """
     # Index each part by it's metadata in `part_lists`. This way, parts with identical
     # metadata ends up in the same list.

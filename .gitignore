@@ -1,5 +1,3 @@
-*.iqs
-*.wav
 __pycache__
 *.egg-info
 build

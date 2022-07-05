@@ -6,6 +6,8 @@ from pyfakefs.fake_filesystem import FakeFilesystem
 from spat.basic import Extrema, Extremum, ExtremumType, Wave, WaveMeta
 from spat.snipdb import SnipDb
 
+from .assets import ASSETS_DIR
+
 
 def test_snip(fs: FakeFilesystem) -> None:
     fs.create_dir("project.snip")
@@ -68,7 +70,7 @@ def test_snip(fs: FakeFilesystem) -> None:
             }
         ]""",
     )
-    fs.add_real_file("beat.wav", target_path="project.snip/data/part0.wav")
+    fs.add_real_file(ASSETS_DIR / "beat.wav", target_path="project.snip/data/part0.wav")
     fs.create_file(
         "project.snip/data/part0.wave-meta.json",
         contents="""

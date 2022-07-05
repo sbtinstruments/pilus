@@ -20,7 +20,6 @@ def _main(source_file: typer.FileBinaryRead) -> None:
 
     wave = snip_db.get(Wave)
     assert wave is not None
-    # print(f"{wave=}")
 
     wave_file = Path("data.wav")
     with wave_file.open("wb") as io:

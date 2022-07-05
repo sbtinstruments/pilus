@@ -1,8 +1,8 @@
-# Pilus🦠
+# Pilus 🦠
 
 ## Load, analyze, plot, filter, classify, ...
 
-Pilus is the one-stop toolbox to work with SBT data files (IQS, BDR, etc.).
+Pilus is your one-stop toolbox for SBT data files (IQS, BDR, etc.).
 
 ## Install
 

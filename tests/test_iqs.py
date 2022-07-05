@@ -3,7 +3,7 @@ from pathlib import Path
 
 from pyfakefs.fake_filesystem import FakeFilesystem
 
-from spat.formats import iqs
+from pilus.formats import iqs
 
 from .assets import ASSETS_DIR
 

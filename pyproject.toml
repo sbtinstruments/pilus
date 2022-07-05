@@ -3,9 +3,9 @@ build-backend = "poetry.core.masonry.api"
 requires = ["poetry-core>=1.0.0"]
 
 [tool.poetry]
-authors = ["tvi <tvi@sbtinstruments.com>"]
+authors = ["tvi <tvi@sbtinstruments.com>", "fpa <fpa@sbtinstruments.com>"]
 description = ""
-name = "spat"
+name = "pilus"
 version = "0.1.0"
 
 [tool.poetry.dependencies]

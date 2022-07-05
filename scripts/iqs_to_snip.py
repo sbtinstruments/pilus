@@ -2,10 +2,10 @@ from pathlib import Path
 
 import typer
 
-from spat.basic import Wave
-from spat.formats import iqs
-from spat.formats import wave as wave_format
-from spat.snipdb import SnipDb
+from pilus.basic import Wave
+from pilus.formats import iqs
+from pilus.formats import wave as wave_format
+from pilus.snipdb import SnipDb
 
 
 def _main(source_file: typer.FileBinaryRead) -> None:

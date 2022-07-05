@@ -3,8 +3,8 @@ from pathlib import Path
 
 from pyfakefs.fake_filesystem import FakeFilesystem
 
-from spat.basic import Extrema, Extremum, ExtremumType, Wave, WaveMeta
-from spat.snipdb import SnipDb
+from pilus.basic import Extrema, Extremum, ExtremumType, Wave, WaveMeta
+from pilus.snipdb import SnipDb
 
 from .assets import ASSETS_DIR
 

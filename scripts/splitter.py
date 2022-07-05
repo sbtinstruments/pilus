@@ -2,7 +2,7 @@ from pathlib import Path
 
 import click
 
-from spat.formats import iqs
+from pilus.formats import iqs
 
 
 def split_iqs_file(source_file: Path) -> None:

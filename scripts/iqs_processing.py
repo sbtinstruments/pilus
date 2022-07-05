@@ -4,7 +4,7 @@ from subprocess import Popen, PIPE
 from dataclasses import dataclass
 from typing import Optional
 from pathlib import Path
-from spat.scripts.splitter import split_iqs_file
+from pilus.scripts.splitter import split_iqs_file
 import click
 
 @dataclass

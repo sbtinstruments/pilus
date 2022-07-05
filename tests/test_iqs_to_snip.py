@@ -2,9 +2,9 @@ from pathlib import Path
 
 from pyfakefs.fake_filesystem import FakeFilesystem
 
-from spat.basic import Wave
-from spat.formats import wave as wav_format
-from spat.snipdb import SnipDb
+from pilus.basic import Wave
+from pilus.formats import wave as wav_format
+from pilus.snipdb import SnipDb
 
 from .assets import ASSETS_DIR
 

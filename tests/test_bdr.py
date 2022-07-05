@@ -2,7 +2,7 @@ from pathlib import Path
 
 from pyfakefs.fake_filesystem import FakeFilesystem
 
-from spat.formats.bdr import Bdr
+from pilus.formats.bdr import Bdr
 
 from .assets import ASSETS_DIR
 

@@ -4,7 +4,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-from spat.formats.bdr import Bdr
+from pilus.formats.bdr import Bdr
 
 root = "C:/Users\MGD\Dropbox (SBT Instruments)\SBT R&D\Experiments/2021-10-04 Chr hansen (PLJ)\BB files/bdr\indexed"
 paths = [

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, BinaryIO, ClassVar
+from typing import TYPE_CHECKING, Any, BinaryIO, ClassVar
 
-from .._errors import IqsError
-from .._io_utilities import read_int, write_int
+from ....errors import PilusDeserializeError
+from ..._io import read_int, write_int
 
 if TYPE_CHECKING:
     from ._ihdr import IhdrChunk
@@ -23,35 +23,36 @@ class ShdrChunk:
     def from_ihdr(cls, ihdr: "IhdrChunk", *, site_to_keep: str) -> ShdrChunk:
         """Convert the IHDR chunk into an SHDR chunk.
 
-        May raise `IqsError` or one of its derivatives.
+        May raise `PilusDeserializeError` or one of its derivatives.
         """
         try:
             site = ihdr[site_to_keep]
         except KeyError as exc:
-            raise IqsError(f'No such site: "{site_to_keep}"') from exc
+            raise PilusDeserializeError(f'No such site: "{site_to_keep}"') from exc
         channel_headers = frozenset(site.values())
         # Early out if the channels are not in the same format
         if len(channel_headers) > 1:
-            raise IqsError("Channels are heterogenous")
+            raise PilusDeserializeError("Channels are heterogenous")
         channel_header = next(iter(channel_headers))
-        return cls(channel_header.time_step_ns, channel_header.max_amplitude)
+        return cls(
+            time_step_ns=channel_header.time_step_ns,
+            max_amplitude=channel_header.max_amplitude,
+        )
 
     @classmethod
-    def from_io(cls, io: BinaryIO) -> ShdrChunk:
+    def from_io(cls, io: BinaryIO, **kwargs: Any) -> ShdrChunk:
         """Deserialize the IO stream into an SHDR chunk.
 
-        May raise `IqsError` or one of its derivatives.
+        May raise `PilusDeserializeError` or one of its derivatives.
         """
-        time_step_ns = read_int(io, 4)
-        max_amplitude = read_int(io, 4)
-        return cls(time_step_ns, max_amplitude)
+        return cls(time_step_ns=read_int(io, 4), max_amplitude=read_int(io, 4))
 
     def to_io(self, io: BinaryIO) -> None:
         """Serialize this chunk to the IO stream.
 
         This only returns the "data" and not the "length", "type", or "CRC".
 
-        May raise `IqsError` or one of its derivatives.
+        May raise `PilusSerializeError` or one of its derivatives.
         """
         write_int(io, self.time_step_ns, 4)
         write_int(io, self.max_amplitude, 4)

@@ -12,10 +12,9 @@ IQS_FILE = ASSETS_DIR / Path("after2-measure-20191217-115350-0QX.iqs")
 
 
 def test_iqs_from_io(fs: FakeFilesystem) -> None:
-    fs.add_real_file(IQS_FILE, target_path="data.iqs")
     data_file = Path("data.iqs")
-    with data_file.open("rb") as io:
-        snip_db = SnipDb.from_iqs_io(io)
+    fs.add_real_file(IQS_FILE, target_path=data_file)
+    snip_db = SnipDb.from_file(data_file)
 
     wave = snip_db.get(Wave)
     assert wave is not None

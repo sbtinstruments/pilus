@@ -1,12 +1,13 @@
 from datetime import datetime
-from enum import Enum
-from typing import Tuple
+from enum import Enum, unique
 
+from .._magic import MediumSpec
+from ..forge import FORGE, Morpher
 from ..formats.json import from_json_data
-from ..formats.registry import add_deserializer
-from ..model import Model
+from ..model import FrozenModel
 
 
+@unique
 class ExtremumType(Enum):
     """An extremum can either be a minimum or a maximum."""
 
@@ -15,7 +16,7 @@ class ExtremumType(Enum):
     MAXIMUM = "maximum"
 
 
-class Extremum(Model):
+class Extremum(FrozenModel):
     """Time-indexed extremum with floating-point value."""
 
     time_point: datetime
@@ -23,10 +24,13 @@ class Extremum(Model):
     type_: ExtremumType
 
 
-Extrema = Tuple[Extremum, ...]
+Extrema = tuple[Extremum, ...]
 
 
-add_deserializer(
-    "application/vnd.sbt.extrema+json",
-    from_data=lambda data: from_json_data(Extrema, data),
+FORGE.add_morpher(
+    Morpher(
+        input=MediumSpec(raw_type=bytes, media_type="application/vnd.sbt.extrema+json"),
+        output=Extrema,
+        func=lambda data: from_json_data(Extrema, data),
+    )
 )

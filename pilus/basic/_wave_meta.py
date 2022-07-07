@@ -1,10 +1,11 @@
 from datetime import datetime
 
-from ..model import Model, add_media_type
+from ..forge import FORGE
+from ..model import FrozenModel
 
 
-@add_media_type("application/vnd.sbt.wave-meta+json")
-class WaveMeta(Model):
+@FORGE.register_model("application/vnd.sbt.wave-meta+json")
+class WaveMeta(FrozenModel):
     """Metadata for a wave (LPCM signal)."""
 
     start_time: datetime

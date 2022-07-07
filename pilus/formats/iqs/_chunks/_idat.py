@@ -2,29 +2,18 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, BinaryIO, ClassVar, Optional
+from typing import TYPE_CHECKING, Any, BinaryIO, ClassVar, Optional
 
-from .._errors import IqsError
-from .._io_utilities import read_exactly, read_int, write_exactly, write_int
+from ....basic import IqsChannelData
+from ....errors import PilusDeserializeError
+from ..._io import read_exactly, read_int, write_exactly, write_int
 from ._ihdr import IhdrChunk
 
 if TYPE_CHECKING:
     from ._sdat import SdatChunk
 
 
-@dataclass(frozen=True)
-class ChannelData:
-    """Raw binary channel data split into complex parts."""
-
-    re: bytes
-    im: bytes
-
-    def __post_init__(self) -> None:
-        if len(self.re) != len(self.im):
-            raise ValueError("The two complex parts must have the same length")
-
-
-SiteData = dict[str, ChannelData]
+SiteData = dict[str, IqsChannelData]
 
 
 @dataclass(frozen=True)
@@ -119,7 +108,7 @@ class IdatChunk:
                 # down at [1] and [2] and because of [3].
                 merged_re_bound = merged_re[0:total_byte_length]
                 merged_im_bound = merged_im[0:total_byte_length]
-                merged_channel = ChannelData(
+                merged_channel = IqsChannelData(
                     bytes(merged_re_bound),
                     bytes(merged_im_bound),
                 )
@@ -136,7 +125,8 @@ class IdatChunk:
         *chunks: IdatChunk,
         tolerance: Optional[timedelta] = None,
     ) -> None:
-        """Raise an `IqsError` error if the given chunks are not adjoined in time."""
+        """Raise an `PilusDeserializeError` error if the given chunks are not adjoined in time.
+        """
         # Default arguments
         if tolerance is None:
             tolerance = timedelta(microseconds=1)
@@ -149,7 +139,7 @@ class IdatChunk:
             if abs(delta) > tolerance:
                 delta_us = delta.total_seconds() * 1e6
                 threshold_us = tolerance.total_seconds() * 1e6
-                raise IqsError(
+                raise PilusDeserializeError(
                     f"The chunks are {delta_us:.2f} µs apart. "
                     f"The threshold is {threshold_us:.2f} µs."
                 )
@@ -173,8 +163,8 @@ class IdatChunk:
         hf_im = interleaved[1::4].tobytes()
         lf_re = interleaved[2::4].tobytes()
         lf_im = interleaved[3::4].tobytes()
-        hf_channel = ChannelData(hf_re, hf_im)
-        lf_channel = ChannelData(lf_re, lf_im)
+        hf_channel = IqsChannelData(hf_re, hf_im)
+        lf_channel = IqsChannelData(lf_re, lf_im)
         site: SiteData = {
             "hf": hf_channel,
             "lf": lf_channel,
@@ -184,11 +174,14 @@ class IdatChunk:
         return cls(sdat.start_time, duration_ns, sites)
 
     @classmethod
-    def from_io(cls, io: BinaryIO, *, ihdr: IhdrChunk) -> IdatChunk:
+    def from_io(cls, io: BinaryIO, **kwargs: Any) -> IdatChunk:
         """Deserialize the IO stream into an IDAT chunk.
 
-        May raise `IqsError` or one of its derivatives.
+        May raise `PilusDeserializeError` or one of its derivatives.
         """
+        ihdr = kwargs["header"]
+        assert isinstance(ihdr, IhdrChunk)
+
         timestamp_us = read_int(io, 8)
         duration_ns = read_int(io, 8)
 
@@ -197,7 +190,7 @@ class IdatChunk:
             site_data: SiteData = dict()
             for channel_name, channel_header in site_header.items():
                 if duration_ns % channel_header.time_step_ns != 0:
-                    raise IqsError(
+                    raise PilusDeserializeError(
                         "IDAT duration is not a multiple of the IHDR time step"
                     )
                 logical_length = duration_ns // channel_header.time_step_ns
@@ -205,7 +198,7 @@ class IdatChunk:
                 re_data = read_exactly(io, byte_length)
                 im_data = read_exactly(io, byte_length)
                 # Add channel data to site data
-                channel_data = ChannelData(re_data, im_data)
+                channel_data = IqsChannelData(re_data, im_data)
                 site_data[channel_name] = channel_data
             # Add site header to chunk
             idat_value[site_name] = site_data
@@ -217,7 +210,7 @@ class IdatChunk:
 
         This only returns the "data" and not the "length", "type", or "CRC".
 
-        May raise `IqsError` or one of its derivatives.
+        May raise `PilusSerializeError` or one of its derivatives.
         """
         timestamp_us = int(self.start_time.timestamp() * 1e6)
         write_int(io, timestamp_us, 8)

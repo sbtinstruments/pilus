@@ -2,29 +2,24 @@ from __future__ import annotations
 
 from functools import reduce
 from pathlib import Path
-from typing import Any, BinaryIO, ClassVar, Iterable, Optional, Type, TypeVar
+from typing import Any, ClassVar, Iterable, Iterator, Optional, Type, TypeVar
 
 from tinydb import TinyDB, where
 from tinydb.queries import Query, QueryInstance
 from tinydb.storages import MemoryStorage
 from typeguard import check_type
 
-from pilus.formats import iqs, snip
-
-from ..formats.registry import add_deserializer
-from ..formats.snip import (
-    SnipAttr,
-    SnipAttrDeclMap,
-    SnipAttributeMap,
-    SnipPart,
-    SnipPartMetadata,
-)
-from ._snip_from_iqs import iqs_to_attr_decls, iqs_to_snip_parts
+from .._magic import Medium
+from ..forge import FORGE, ForgeIO
+from ._snip_attribute_declaration_map import SnipAttrDeclMap
+from ._snip_attributes import SnipAttr
+from ._snip_part import SnipPart
+from ._snip_part_metadata import SnipAttributeMap, SnipPartMetadata
 
 T = TypeVar("T")
 
 
-class SnipDb:
+class SnipDb(ForgeIO):
     """Immutable, in-memory database of snip parts (deserialized files).
 
     Examples:
@@ -164,33 +159,13 @@ class SnipDb:
         return query
 
     @classmethod
-    def from_dir(cls, root: Path) -> SnipDb:
-        """Parse directory to an instance of this class."""
-        if root.suffix == ".snip":
-            return cls.from_snip_dir(root)
-        raise ValueError("Can't determine media type from directory alone")
+    def from_dir(cls, directory: Path, *, media_type: Optional[str] = None) -> SnipDb:
+        """Deserialize directory into an instance of this class."""
+        input_medium = Medium.from_raw(directory, media_type=media_type)
+        return FORGE.deserialize(input_medium, cls)
 
-    @classmethod
-    def from_snip_dir(cls, root: Path) -> SnipDb:
-        """Parse snip directory to an instance of this class."""
-        return snip.from_dir(SnipDb, root)
-
-    @classmethod
-    def from_iqs_io(cls, io: BinaryIO) -> SnipDb:
-        """Convert IQS IO stream to an instance of this class."""
-        iqs_aggregate = iqs.from_io(io)
-        if iqs_aggregate is None:
-            return cls()
-        return cls.from_iqs_aggregate(iqs_aggregate)
-
-    @classmethod
-    def from_iqs_aggregate(cls, iqs_aggregate: iqs.IqsAggregate) -> SnipDb:
-        """Convert IQS aggregate to an instance of this class."""
-        attr_decls = iqs_to_attr_decls(iqs_aggregate)
-        return cls(iqs_to_snip_parts(iqs_aggregate, attr_decls), attr_decls)
-
-    def __iter__(self) -> Iterable[SnipPart[Any]]:
-        """Return iterable of all parts in this database."""
+    def __iter__(self) -> Iterator[SnipPart[Any]]:
+        """Return iterator of all parts in this database."""
         return (_doc_to_part(doc) for doc in self._parts)
 
 
@@ -200,6 +175,3 @@ def _doc_to_part(document: dict[str, Any]) -> SnipPart[Any]:
         name=document["name"], attributes=document["attributes"]
     )
     return SnipPart(value=value, metadata=metadata)
-
-
-add_deserializer(SnipDb.snip_media_type, from_dir=SnipDb.from_snip_dir)

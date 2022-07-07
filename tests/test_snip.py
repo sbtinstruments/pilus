@@ -108,6 +108,10 @@ def test_snip(fs: FakeFilesystem) -> None:
         ),
     )
 
+    print("=======")
+    for part in project:
+        print(f"{type(part.value)=} {part.metadata=}")
+
     wave_part = project.get(Wave)
     assert wave_part is not None
     wave = wave_part.value

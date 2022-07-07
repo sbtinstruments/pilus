@@ -1,29 +1,15 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, BinaryIO, ClassVar
+from typing import TYPE_CHECKING, Any, BinaryIO, ClassVar
 
-from .._io_utilities import (
-    read_int,
-    read_terminated_string,
-    write_int,
-    write_terminated_string,
-)
+from ....basic import IqsChannelHeader
+from ..._io import read_int, read_terminated_string, write_int, write_terminated_string
 
 if TYPE_CHECKING:
     from ._shdr import ShdrChunk
 
 
-@dataclass(frozen=True)
-class ChannelHeader:
-    """Used to interpret raw binary channel data."""
-
-    time_step_ns: int
-    byte_depth: int
-    max_amplitude: int
-
-
-SiteHeader = dict[str, ChannelHeader]
+SiteHeader = dict[str, IqsChannelHeader]
 
 
 class IhdrChunk(dict[str, SiteHeader]):
@@ -37,13 +23,13 @@ class IhdrChunk(dict[str, SiteHeader]):
 
         Doesn't raise any exceptions.
         """
-        channel_header = ChannelHeader(shdr.time_step_ns, 4, shdr.max_amplitude)
+        channel_header = IqsChannelHeader(shdr.time_step_ns, 4, shdr.max_amplitude)
         site: SiteHeader = {"hf": channel_header, "lf": channel_header}
         sites: dict[str, SiteHeader] = {site_name: site}
         return cls(sites)
 
     @classmethod
-    def from_io(cls, io: BinaryIO) -> IhdrChunk:
+    def from_io(cls, io: BinaryIO, **kwargs: Any) -> IhdrChunk:
         """Deserialize the IO stream into an IHDR chunk.
 
         May raise `IqsError` or one of its derivatives.
@@ -63,7 +49,9 @@ class IhdrChunk(dict[str, SiteHeader]):
                 # (though it's usually only 4).
                 max_amplitude = read_int(io, 64, signed=True)
                 # Add channel header to site header
-                channel_header = ChannelHeader(time_step_ns, byte_depth, max_amplitude)
+                channel_header = IqsChannelHeader(
+                    time_step_ns, byte_depth, max_amplitude
+                )
                 site_header[channel_name] = channel_header
             # Add site header to chunk
             sites[site_name] = site_header

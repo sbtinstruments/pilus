@@ -4,8 +4,8 @@ from pathlib import Path
 from immutables import Map
 from pyfakefs.fake_filesystem import FakeFilesystem
 
+from pilus._magic import Medium
 from pilus.formats import box
-from pilus.formats.registry import IdentifiedResource
 
 
 def test_zip_as_box(fs: FakeFilesystem) -> None:
@@ -28,6 +28,6 @@ def test_zip_as_box(fs: FakeFilesystem) -> None:
     data = project["data"]
     assert isinstance(data, Map)
     my_numbers = data["my_numbers.json"]
-    assert isinstance(my_numbers, IdentifiedResource)
-    assert isinstance(my_numbers.resource, bytes)
-    assert json.loads(my_numbers.resource) == [1, 2, 3, 4]
+    assert isinstance(my_numbers, Medium)
+    assert isinstance(my_numbers.raw, bytes)
+    assert json.loads(my_numbers.raw) == [1, 2, 3, 4]

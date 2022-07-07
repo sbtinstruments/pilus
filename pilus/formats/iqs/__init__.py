@@ -1,2 +1,3 @@
-from ._errors import IqsError
-from ._iqs import IqsAggregate, IqsVersion, from_io, to_io
+from ._iqs_from_io import from_io
+from ._iqs_globals import IqsVersion
+from ._iqs_to_io import to_io

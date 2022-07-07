@@ -1,2 +1,12 @@
 # We only import light-weight stuff at the module level
-from ._errors import PilusError, PilusJsonDecodeError, PilusOSError, PilusValidationError
+from ..errors import (
+    PilusDeserializeError,
+    PilusError,
+    PilusJsonDecodeError,
+    PilusMissingDataError,
+    PilusOSError,
+    PilusSerializeError,
+    PilusUnicodeDecodeError,
+    PilusUnicodeEncodeError,
+    PilusValidationError,
+)

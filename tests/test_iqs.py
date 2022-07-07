@@ -3,12 +3,16 @@ from pathlib import Path
 
 from pyfakefs.fake_filesystem import FakeFilesystem
 
+from pilus.basic import IqsAggregate
 from pilus.formats import iqs
 
 from .assets import ASSETS_DIR
 
 TEST_DATA = [
-    (ASSETS_DIR / Path("after2-measure-20191217-115350-0QX.iqs"), timedelta(microseconds=43)),
+    (
+        ASSETS_DIR / Path("after2-measure-20191217-115350-0QX.iqs"),
+        timedelta(microseconds=43),
+    ),
     (ASSETS_DIR / Path("NormalQC#3-bb2148006-D20.iqs"), timedelta(microseconds=0)),
 ]
 
@@ -18,8 +22,8 @@ DURATION_THRESHOLD = timedelta(microseconds=0)
 def test_iqs_from_io(fs: FakeFilesystem) -> None:
     for iqs_file, duration_threshold in TEST_DATA:
         fs.reset()
-        fs.add_real_file(iqs_file, target_path="data.iqs")
         data_file = Path("data.iqs")
+        fs.add_real_file(iqs_file, target_path=data_file)
         with data_file.open("rb") as io:
             data = iqs.from_io(io)
         assert data is not None
@@ -44,7 +48,13 @@ def test_iqs_from_io(fs: FakeFilesystem) -> None:
         with export_v1_file.open("rb") as io:
             data_v1_imported = iqs.from_io(io)
         assert data_v1_imported is not None
-        imported_v1_duration = timedelta(microseconds=data_v1_imported.duration_ns * 1e-3)
+        imported_v1_duration = timedelta(
+            microseconds=data_v1_imported.duration_ns * 1e-3
+        )
 
         delta = abs(imported_duration - imported_v1_duration)
         assert delta <= duration_threshold
+
+        # Try the methods on `IqsAggregate`
+        iqs_aggregate = IqsAggregate.from_file(data_file)
+        assert iqs_aggregate is not None

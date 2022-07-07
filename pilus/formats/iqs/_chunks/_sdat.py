@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import TYPE_CHECKING, BinaryIO, ClassVar
+from typing import TYPE_CHECKING, Any, BinaryIO, ClassVar
 
-from .._errors import IqsError
-from .._io_utilities import read_exactly, read_int, write_exactly, write_int
+from ....errors import PilusDeserializeError
+from ..._io import read_exactly, read_int, write_exactly, write_int
 
 if TYPE_CHECKING:
     from ._idat import IdatChunk
@@ -25,20 +25,20 @@ class SdatChunk:
         """Convert the IDAT chunk into an SDAT chunk.
 
         May raise:
-          * `IqsError` or one of its derivatives.
+          * `PilusDeserializeError` or one of its derivatives.
           * `RuntimeError` if the platform doesn't natively support 4-byte integers.
         """
         try:
             site = idat.sites[site_to_keep]
         except KeyError as exc:
-            raise IqsError(f'No such site: "{site_to_keep}"') from exc
+            raise PilusDeserializeError(f'No such site: "{site_to_keep}"') from exc
         if len(site) > 2:
-            raise IqsError("Too many channels in the site")
+            raise PilusDeserializeError("Too many channels in the site")
         try:
             hf_channel = site["hf"]
             lf_channel = site["lf"]
         except KeyError as exc:
-            raise IqsError("Couldn't find the HF and LF channels") from exc
+            raise PilusDeserializeError("Couldn't find the HF and LF channels") from exc
         # Interleave channels
         buffer = bytearray(len(hf_channel.re) * 4)  # 4 channels
         format_string = "i"  # 4-byte integer
@@ -60,18 +60,20 @@ class SdatChunk:
 
         This only returns the "data" and not the "length", "type", or "CRC".
 
-        May raise `IqsError` or one of its derivatives.
+        May raise `PilusSerializeError` or one of its derivatives.
         """
         timestamp_us = int(self.start_time.timestamp() * 1e6)
         write_int(io, timestamp_us, 8)
         write_exactly(io, self.interleaved_data)
 
     @classmethod
-    def from_io(cls, io: BinaryIO, *, data_length: int) -> SdatChunk:
+    def from_io(cls, io: BinaryIO, **kwargs: Any) -> SdatChunk:
         """Deserialize the IO stream into an SDAT chunk.
 
         May raise `IqsError` or one of its derivatives.
         """
+        data_length = kwargs["data_length"]
+        assert isinstance(data_length, int)
         timestamp_us = read_int(io, 8)
         start_time = datetime.fromtimestamp(timestamp_us * 1e-6)
         interleaved_data = read_exactly(io, data_length - 8)

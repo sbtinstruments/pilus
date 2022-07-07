@@ -1,8 +1,9 @@
 import wave
-from typing import BinaryIO
+from typing import Annotated, BinaryIO
 
-from .._errors import PilusError
-from ._lpcm import Lpcm
+from ...basic import Lpcm
+from ...errors import PilusError
+from ...forge import FORGE
 
 
 class PilusWaveError(PilusError, wave.Error):
@@ -12,7 +13,8 @@ class PilusWaveError(PilusError, wave.Error):
 _ONE_SECOND_IN_NANOSECONDS = int(1e9)
 
 
-def from_io(io: BinaryIO) -> Lpcm:
+@FORGE.register_deserializer
+def from_io(io: Annotated[BinaryIO, "audio/vnd.wave"]) -> Lpcm:
     """Deserialize IO stream into an instance of the given type."""
     ### Metadata
     # The actual deserialization happens at `Wave_read`. The subsequent calls to

@@ -6,7 +6,8 @@ Key = TypeVar("Key")
 Val = TypeVar("Val")
 
 
-def freeze_mapping(mapping: Mapping[Key, Val]) -> Map[Key, Val]:
+# mypy can't handle the return inside the with statement. Hence the ignore.
+def freeze_mapping(mapping: Mapping[Key, Val]) -> Map[Key, Val]:  # type: ignore[return]
     """Convert `Mapping` into `immutables.Map`.
 
     Unlike `immutables.Map.__init__`, this function works for non-string keys.

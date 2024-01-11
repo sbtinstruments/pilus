@@ -9,7 +9,7 @@ name = "pilus"
 version = "0.1.0"
 
 [tool.poetry.group.main.dependencies]
-immutables = "^0.16"
+immutables = "^0.20"
 python = "^3.10"
 pydantic = "^1.9.1"
 pyhumps = "^1.6.1"

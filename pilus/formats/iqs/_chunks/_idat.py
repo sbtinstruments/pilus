@@ -129,7 +129,7 @@ class IdatChunk:
         """
         # Default arguments
         if tolerance is None:
-            tolerance = timedelta(microseconds=1)
+            tolerance = timedelta(microseconds=2)
         # Early out if there are no chunks
         if not chunks:
             raise ValueError("Can't check empty sequence of chunks")

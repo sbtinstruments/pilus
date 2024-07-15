@@ -49,3 +49,9 @@ class FitComplex:
             raise ValueError(
                 "Imaginary part center must be within the overall time interval"
             )
+
+    def __lt__(self, rhs: FitComplex) -> bool:
+        return min(self.re.center, self.im.center) < min(rhs.re.center, rhs.im.center)
+
+    def __le__(self, rhs: FitComplex) -> bool:
+        return min(self.re.center, self.im.center) <= min(rhs.re.center, rhs.im.center)

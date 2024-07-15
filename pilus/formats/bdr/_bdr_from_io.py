@@ -102,9 +102,10 @@ def _freeze_sites(mutable_sites: dict[str, MutableSite]) -> dict[str, BdrAggrega
             channel_name: BdrAggregateChannel(
                 time_start=channel.time_start,
                 time_end=channel.time_end,
-                transition_fits=sum(
-                    channel.transition_fits, tuple()
-                ),  # Flatten list of tuples
+                # Flatten list of tuples and sort them
+                transition_fits=tuple(
+                    sorted(fit for fits in channel.transition_fits for fit in fits)
+                ),
             )
             for channel_name, channel in site.items()
         }

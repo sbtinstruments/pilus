@@ -1,5 +1,8 @@
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from immutables import Map
 
-Box = Map[str, Any]
+if TYPE_CHECKING:
+    Box = Map[str, Any]
+else:
+    Box = Map

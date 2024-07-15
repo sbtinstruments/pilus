@@ -1,5 +1,6 @@
 from contextlib import AbstractContextManager, ExitStack
 from os import PathLike
+from pathlib import Path
 from typing import (
     Any,
     BinaryIO,
@@ -98,7 +99,8 @@ class Forge:
             output_raw_type = PathLike
         else:
             ValueError("Unsupported first argument type")
-        output_spec = MediumSpec(raw_type=output_raw_type, media_type=output_media_type)
+        output_spec = MediumSpec(
+            raw_type=output_raw_type, media_type=output_media_type)
         morpher = Morpher(input=input_type, output=output_spec, func=func)
         self.add_morpher(morpher)
         # We don't change the function itself, we simply register it.
@@ -110,7 +112,8 @@ class Forge:
     def convert(self, input_medium: Medium, output_medium: Medium) -> None:
         # Find a sequence of morphs that takes us from the input medium
         # to the output type.
-        morphs = tuple(self._morphers.get_morphs(input_medium.spec, output_medium.spec))
+        morphs = tuple(self._morphers.get_morphs(
+            input_medium.spec, output_medium.spec))
         with ExitStack() as stack:
             result: Any = input_medium.raw
             # Apply each morph in turn.
@@ -123,8 +126,8 @@ class Forge:
                 # Some morphs, however, return context managers. E.g., to keep
                 # track of open file handles. For these morphs, we use the
                 # `stack` to make sure that we close all open file handles afterwards.
-                if isinstance(result, AbstractContextManager):
-                    result = stack.enter_context(result)
+                result = _maybe_enter(stack, result)
+
             last_morph = morphs[-1]
             assert isinstance(last_morph, SerializeFunc)
             last_morph(result, output_medium.raw)
@@ -144,14 +147,14 @@ class Forge:
                 # Some morphs, however, return context managers. E.g., to keep
                 # track of open file handles. For these morphs, we use the
                 # `stack` to make sure that we close all open file handles afterwards.
-                if isinstance(result, AbstractContextManager):
-                    result = stack.enter_context(result)
+                result = _maybe_enter(stack, result)
         return cast(T, result)
 
     def serialize(self, input_data: Any, output_medium: Medium) -> None:
         # Find a sequence of morphs that takes us from the input medium
         # to the output type.
-        morphs = tuple(self._morphers.get_morphs(type(input_data), output_medium.spec))
+        morphs = tuple(self._morphers.get_morphs(
+            type(input_data), output_medium.spec))
         with ExitStack() as stack:
             result: Any = input_data
             # Apply each morph in turn.
@@ -164,8 +167,7 @@ class Forge:
                 # Some morphs, however, return context managers. E.g., to keep
                 # track of open file handles. For these morphs, we use the
                 # `stack` to make sure that we close all open file handles afterwards.
-                if isinstance(result, AbstractContextManager):
-                    result = stack.enter_context(result)
+                result = _maybe_enter(stack, result)
             last_morph = morphs[-1]
             assert isinstance(last_morph, SerializeFunc)
             last_morph(result, output_medium.raw)
@@ -180,7 +182,8 @@ class Forge:
         """
         # Early out on unsupported media types
         if not media_type.endswith("+json"):
-            raise ValueError('Only supports media types with the "+json" suffix')
+            raise ValueError(
+                'Only supports media types with the "+json" suffix')
 
         def _decorator(cls: Type[M]) -> Type[M]:
             morpher = Morpher(
@@ -199,3 +202,21 @@ class Forge:
         self._mergers.add_merger(merger)
         # We don't change the function itself, we simply register it.
         return func
+
+
+def _maybe_enter(stack: ExitStack, obj: Any) -> Any:
+    # Special case for `pathlib.Path`: While technically a context manager (until
+    # python 3.13), the enter/exit logic is a no-op. It also emits a deprecation
+    # warning to enter/exit. Therefore, we do not add these objects to the stack.
+    #
+    # See: https://github.com/python/cpython/pull/30971
+    if isinstance(obj, Path):
+        return obj
+
+    # Otherwise, add all (sync) context managers to the stack.
+    if isinstance(obj, AbstractContextManager):
+        return stack.enter_context(obj)
+
+    # If we get this far, the object was not a context manager. We just return
+    # the object as is.
+    return obj

@@ -4,7 +4,7 @@ from pyfakefs.fake_filesystem import FakeFilesystem
 
 from pilus.basic import Lpcm
 
-from .assets import ASSETS_DIR
+from ._assets import ASSETS_DIR
 
 WAVE_FILE = ASSETS_DIR / Path("beat.wav")
 

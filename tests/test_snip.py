@@ -6,7 +6,7 @@ from pyfakefs.fake_filesystem import FakeFilesystem
 from pilus.basic import Extrema, Extremum, ExtremumType, Wave, WaveMeta
 from pilus.snipdb import SnipDb
 
-from .assets import ASSETS_DIR
+from ._assets import ASSETS_DIR
 
 
 def test_snip(fs: FakeFilesystem) -> None:

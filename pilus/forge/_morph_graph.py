@@ -2,7 +2,7 @@ from contextlib import contextmanager
 from itertools import pairwise
 from os import PathLike
 from pathlib import Path
-from typing import Any, BinaryIO, Iterable, Iterator
+from typing import Any, BinaryIO, Iterable, Iterator, cast, get_origin
 
 import networkx as nx
 
@@ -38,20 +38,24 @@ class MorphGraph:
     def _generate_edges_to_medium_spec(self, spec: MediumSpec) -> None:
         if spec.raw_type is BinaryIO:
             path_to_io = Morpher(
-                input=MediumSpec(raw_type=PathLike, media_type=spec.media_type),
+                input=MediumSpec(raw_type=PathLike,
+                                 media_type=spec.media_type),
                 output=spec,
                 func=_file_to_io,
             )
             self._add_morpher_if_not_exists(path_to_io)
         elif spec.raw_type is bytes:
             path_to_io = Morpher(
-                input=MediumSpec(raw_type=PathLike, media_type=spec.media_type),
-                output=MediumSpec(raw_type=BinaryIO, media_type=spec.media_type),
+                input=MediumSpec(raw_type=PathLike,
+                                 media_type=spec.media_type),
+                output=MediumSpec(raw_type=BinaryIO,
+                                  media_type=spec.media_type),
                 func=_file_to_io,
             )
             self._add_morpher_if_not_exists(path_to_io)
             io_to_data = Morpher(
-                input=MediumSpec(raw_type=BinaryIO, media_type=spec.media_type),
+                input=MediumSpec(raw_type=BinaryIO,
+                                 media_type=spec.media_type),
                 output=MediumSpec(raw_type=bytes, media_type=spec.media_type),
                 func=_io_to_data,
             )
@@ -92,8 +96,9 @@ class MorphGraph:
             for edge in nx.dfs_edges(self._graph, spec):
                 target_node = edge[1]
                 if not isinstance(target_node, MediumSpec):
-                    assert isinstance(target_node, type)
-                    return target_node
+                    assert isinstance(target_node, type) or isinstance(
+                        get_origin(target_node), type)
+                    return cast(type, target_node)
         except KeyError:
             pass
         raise ValueError(

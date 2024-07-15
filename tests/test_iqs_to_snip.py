@@ -6,7 +6,7 @@ from pilus.basic import Wave
 from pilus.formats import wave as wav_format
 from pilus.snipdb import SnipDb
 
-from .assets import ASSETS_DIR
+from ._assets import ASSETS_DIR
 
 IQS_FILE = ASSETS_DIR / Path("after2-measure-20191217-115350-0QX.iqs")
 

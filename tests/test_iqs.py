@@ -6,7 +6,7 @@ from pyfakefs.fake_filesystem import FakeFilesystem
 from pilus.basic import IqsAggregate
 from pilus.formats import iqs
 
-from .assets import ASSETS_DIR
+from ._assets import ASSETS_DIR
 
 TEST_DATA = [
     (

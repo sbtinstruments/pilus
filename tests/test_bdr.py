@@ -6,7 +6,7 @@ from pilus._magic import Medium
 from pilus.basic import BdrAggregate
 from pilus.forge import FORGE
 
-from .assets import ASSETS_DIR
+from ._assets import ASSETS_DIR
 
 BDR_FILE = ASSETS_DIR / Path("measure-bb2221028-A02.bdr")
 

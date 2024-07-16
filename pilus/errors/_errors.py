@@ -1,28 +1,22 @@
 from json import JSONDecodeError
 from typing import Any
-
 from pydantic import ValidationError
 
+
 ### General
-
-
-class PilusError(Exception):
+class PilusBaseError(Exception):
     """Base class for all exceptions in the pilus package."""
 
 
-class PilusOSError(PilusError, OSError):
+class PilusOSError(PilusBaseError, OSError):
     """OS-level error in the pilus package."""
 
 
-class PilusValidationError(PilusError, ValidationError):
-    """Error during validation.
-
-    Note that `ValidationError` inherits from `ValueError`.
-    """
+PilusValidationError = ValidationError
 
 
 ### Type conversions
-class PilusConversionError(PilusError):
+class PilusConversionError(PilusBaseError):
     """Could not convert an instance from one type to another."""
 
 
@@ -31,7 +25,7 @@ class PilusMissingMorpherError(PilusConversionError):
 
 
 ### Serialization
-class PilusSerializeError(PilusError):
+class PilusSerializeError(PilusBaseError):
     """Could not serialize a medium."""
 
 
@@ -40,7 +34,7 @@ class PilusUnicodeEncodeError(PilusSerializeError, UnicodeEncodeError):
 
 
 ### Deserialization
-class PilusDeserializeError(PilusError):
+class PilusDeserializeError(PilusBaseError):
     """Could not deserialize a medium."""
 
 
@@ -58,3 +52,9 @@ class PilusMissingDataError(PilusDeserializeError):
 
 class PilusUnicodeDecodeError(PilusDeserializeError, UnicodeDecodeError):
     """Could decode string in an pilus medium."""
+
+
+
+### Overall
+# Any error that many come from pilus (or it's dependencies)
+PilusError = PilusBaseError | PilusValidationError

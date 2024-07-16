@@ -189,7 +189,7 @@ class Forge:
             morpher = Morpher(
                 input=MediumSpec(raw_type=bytes, media_type=media_type),
                 output=cls,
-                func=cls.parse_raw,
+                func=cls.model_validate_json,
             )
             self.add_morpher(morpher)
             return cls

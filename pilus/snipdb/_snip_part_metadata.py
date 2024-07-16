@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from immutables import Map
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from pydantic.fields import Field
 
 from ..utility import find_duplicates, split_at_suffixes
@@ -15,6 +15,13 @@ SnipAttributeMap = Map[str, SnipAttr]
 
 class SnipPartMetadata(BaseModel):
     """Metadata (name, attributes) for a snip part (deserialized file)."""
+
+    model_config = ConfigDict(
+        frozen=True,
+        # For `immutables.Map`
+        # TODO: Add validator instead when pydantic supports custom data types.
+        arbitrary_types_allowed=True,
+    )
 
     name: str
     attributes: SnipAttributeMap = Field(default_factory=dict)
@@ -48,12 +55,6 @@ class SnipPartMetadata(BaseModel):
             attr_decls.parse_raw_attributes(raw_attributes)
         )
         return cls(name=name, attributes=attributes)
-
-    class Config:  # pylint: disable=too-few-public-methods
-        frozen = True
-        # For `immutables.Map`
-        # TODO: Add validator instead when pydantic supports custom data types.
-        arbitrary_types_allowed = True
 
 
 def create_attribute_map(

@@ -2,11 +2,11 @@ import wave
 from typing import Annotated, BinaryIO
 
 from ...basic import Lpcm
-from ...errors import PilusError
+from ...errors import PilusBaseError
 from ...forge import FORGE
 
 
-class PilusWaveError(PilusError, wave.Error):
+class PilusWaveError(PilusBaseError, wave.Error):
     """Raised if the WAVE deserializer fails."""
 
 

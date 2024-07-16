@@ -2,7 +2,7 @@ from ._errors import (
     JSONDecodeError,
     PilusConversionError,
     PilusDeserializeError,
-    PilusError,
+    PilusBaseError,
     PilusJsonDecodeError,
     PilusMissingDataError,
     PilusMissingMorpherError,
@@ -11,5 +11,4 @@ from ._errors import (
     PilusUnicodeDecodeError,
     PilusUnicodeEncodeError,
     PilusValidationError,
-    ValidationError,
 )

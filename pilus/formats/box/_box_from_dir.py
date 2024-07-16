@@ -53,7 +53,8 @@ def from_dir(
     # Manifest
     if manifest is None:
         manifest_path = root / _MANIFEST_PATH
-        manifest = Manifest.parse_file(manifest_path)
+        manifest_data = manifest_path.read_text(encoding="utf8")
+        manifest = Manifest.model_validate_json(manifest_data)
         # Filter out the manifest file from the children
         children.remove(manifest_path)
     # Resolve the children in the directory

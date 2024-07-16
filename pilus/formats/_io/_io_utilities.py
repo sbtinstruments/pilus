@@ -4,7 +4,6 @@ from typing import BinaryIO, Literal
 
 from ...errors import (
     PilusDeserializeError,
-    PilusError,
     PilusMissingDataError,
     PilusOSError,
     PilusSerializeError,
@@ -19,7 +18,7 @@ def read_int(io: BinaryIO, size: int, *, signed: bool = False) -> int:
     """Read integer of the given byte size.
 
     May raise:
-      * `PilusError`
+      * `PilusBaseError`
         * `PilusOSError`
         * `PilusDeserializeError`
           * `PilusMissingDataError`
@@ -35,7 +34,7 @@ def read_double(io: BinaryIO) -> float:
     """Read 8-byte floating-point number.
 
     May raise:
-      * `PilusError`
+      * `PilusBaseError`
         * `PilusOSError`
         * `PilusDeserializeError`
           * `PilusMissingDataError`
@@ -58,7 +57,7 @@ def read_terminated_string(
     """Read a terminated string.
 
     May raise:
-      * `PilusError`
+      * `PilusBaseError`
         * `PilusOSError`
         * `PilusDeserializeError`
           * `PilusMissingDataError`
@@ -78,7 +77,7 @@ def read_string(io: BinaryIO, size: int) -> str:
     """Read a fixed-length string.
 
     May raise:
-      * `PilusError`
+      * `PilusBaseError`
         * `PilusOSError`
         * `PilusDeserializeError`
           * `PilusMissingDataError`
@@ -95,7 +94,7 @@ def read_exactly(io: BinaryIO, size: int) -> bytes:
     """Read `size` bytes from the binary IO stream.
 
     May raise:
-      * `PilusError`
+      * `PilusBaseError`
         * `PilusOSError`
         * `PilusDeserializeError`
           * `PilusMissingDataError` (if we didn't read exactly `size` bytes)
@@ -117,7 +116,7 @@ def seek(io: BinaryIO, size: int, whence: int) -> None:
     """Skip `size` bytes of data in the IO stream.
 
     May raise:
-      * `PilusError`
+      * `PilusBaseError`
         * `PilusOSError`
     """
     try:
@@ -130,7 +129,7 @@ def tell(io: BinaryIO) -> int:
     """Return the current position in the IO stream.
 
     May raise:
-      * `PilusError`
+      * `PilusBaseError`
         * `PilusOSError`
     """
     try:
@@ -143,7 +142,7 @@ def write_int(io: BinaryIO, value: int, size: int, *, signed: bool = False) -> N
     """Encode integer and write the data to the IO stream.
 
     May raise:
-      * `PilusError`
+      * `PilusBaseError`
         * `PilusOSError`
         * `PilusSerializeError`
     """
@@ -164,7 +163,7 @@ def write_terminated_string(
     """Encode string and write the data to the IO stream.
 
     May raise:
-      * `PilusError`
+      * `PilusBaseError`
         * `PilusOSError`
         * `PilusSerializeError`
           * `PilusUnicodeEncodeError`
@@ -185,7 +184,7 @@ def write_exactly(io: BinaryIO, data: bytes) -> None:
     """Write binary data to the IO stream.
 
     May raise:
-      * `PilusError`
+      * `PilusBaseError`
         * `PilusOSError`
         * `PilusSerializeError` (if we can't write all of the given data)
     """

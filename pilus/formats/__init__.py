@@ -1,7 +1,7 @@
 # We only import light-weight stuff at the module level
 from ..errors import (
     PilusDeserializeError,
-    PilusError,
+    PilusBaseError,
     PilusJsonDecodeError,
     PilusMissingDataError,
     PilusOSError,

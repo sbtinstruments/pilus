@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import Enum, unique
 from typing import Any, ClassVar, Literal, Type, TypeVar, Union
 
-from pydantic import Field, validator
+from pydantic import Field, field_validator, ValidationInfo
 
 from ..model import FrozenModel
 
@@ -81,12 +81,13 @@ class SnipEnum(FrozenModel):
     declaration: SnipEnumDecl
     value: str
 
-    @validator("value")
+    @field_validator("value")
+    @classmethod
     def value_must_be_in_enum(  # pylint: disable=no-self-use,no-self-argument
-        cls, v: str, values: Any
+        cls, v: str, info: ValidationInfo
     ) -> str:
         """Ensure that the value is part of the enum."""
-        declaration: SnipEnumDecl = values["declaration"]
+        declaration: SnipEnumDecl = info.data["declaration"]
         if v not in declaration.values:
             raise ValueError(
                 f'Value "{v}" is not part of the enum {declaration.values}'

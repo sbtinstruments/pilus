@@ -28,7 +28,7 @@ def iqs_to_attr_decls(aggregate: IqsAggregate) -> SnipAttrDeclMap:
         "channel": SnipEnumDecl.from_args(values=channel_enum_values),
         "part": SnipEnumDecl.from_args(values=("re", "im")),
     }
-    return SnipAttrDeclMap(__root__=root)
+    return SnipAttrDeclMap(root=root)
 
 
 def iqs_to_snip_parts(

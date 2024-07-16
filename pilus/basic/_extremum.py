@@ -1,9 +1,10 @@
 from datetime import datetime
 from enum import Enum, unique
 
+from pydantic import TypeAdapter
+
 from .._magic import MediumSpec
 from ..forge import FORGE, Morpher
-from ..formats.json import from_json_data
 from ..model import FrozenModel
 
 
@@ -29,8 +30,10 @@ Extrema = tuple[Extremum, ...]
 
 FORGE.add_morpher(
     Morpher(
-        input=MediumSpec(raw_type=bytes, media_type="application/vnd.sbt.extrema+json"),
+        input=MediumSpec(
+            raw_type=bytes, media_type="application/vnd.sbt.extrema+json"),
         output=Extrema,
-        func=lambda data: from_json_data(Extrema, data),
+        func=TypeAdapter(Extrema).validate_json,
+
     )
 )

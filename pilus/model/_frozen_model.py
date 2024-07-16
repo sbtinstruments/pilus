@@ -1,18 +1,16 @@
 from __future__ import annotations
 
-from typing import Any, Type, TypeVar
+from typing import TypeVar
 
-from pydantic import BaseModel
-
-from ..formats.json import from_json_obj
+from pydantic import BaseModel, ConfigDict
+from pydantic.alias_generators import to_camel as snake_to_lower_camel
 
 Derived = TypeVar("Derived", bound="FrozenModel")
 
 
 class FrozenModel(BaseModel):
-    class Config:  # pylint: disable=too-few-public-methods
-        frozen = True
-
-    @classmethod
-    def parse_obj(cls: Type[Derived], obj: Any) -> Derived:
-        return from_json_obj(cls, obj)
+    model_config = ConfigDict(
+        frozen=True,
+        populate_by_name=True,
+        alias_generator=snake_to_lower_camel
+    )

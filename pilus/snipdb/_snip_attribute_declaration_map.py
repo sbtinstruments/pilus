@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from typing import Iterable, Optional
 
-from pydantic import validator
+from pydantic import RootModel, field_validator
 
 from ..forge import FORGE
-from ..model import FrozenModel
 from ._snip_attributes import (
     SnipAttr,
     SnipAttrDecl,
@@ -23,26 +22,26 @@ _RootType = dict[str, SnipAttrDecl]
 
 
 @FORGE.register_model("application/vnd.sbt.snip.attributes+json")
-class SnipAttrDeclMap(FrozenModel):
+class SnipAttrDeclMap(RootModel, frozen=True):
     """Attribute declarations for snip."""
 
-    __root__: _RootType = dict()
+    root: _RootType = dict()
 
     @property
     def enums(self) -> Iterable[tuple[str, SnipEnumDecl]]:
         """Return all (name, enum) pairs."""
-        return _get_enums(self.__root__)
+        return _get_enums(self.root)
 
     def has_declarations_for(self, attributes: Iterable[SnipAttr]) -> bool:
         """Has declarations for all of the given attributes."""
-        return all(a.declaration in self.__root__.values() for a in attributes)
+        return all(a.declaration in self.root.values() for a in attributes)
 
     def parse_kwargs(self, **kwargs: str) -> Iterable[tuple[str, SnipAttr]]:
         """Return all (name, attribute) pairs based on the kwargs."""
         for name, value in kwargs.items():
             # Find type
             try:
-                declaration = self.__root__[name]
+                declaration = self.root[name]
             except KeyError as exc:
                 raise ValueError(f'There is no attribute named "{name}"') from exc
             # Int
@@ -86,7 +85,7 @@ class SnipAttrDeclMap(FrozenModel):
             name, raw_value = parts
             # Find type
             try:
-                declaration = self.__root__[name]
+                declaration = self.root[name]
             except KeyError as exc:
                 raise ValueError(f'There is no attribute named "{name}"') from exc
             # Int
@@ -111,7 +110,8 @@ class SnipAttrDeclMap(FrozenModel):
                 return name, SnipEnum(declaration=enum, value=value)
         return None
 
-    @validator("__root__")
+    @field_validator("root")
+    @classmethod
     def enum_values_are_globally_unique(  # pylint: disable=no-self-argument,no-self-use
         cls, v: _RootType
     ) -> _RootType:  # [1]

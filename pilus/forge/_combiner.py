@@ -4,15 +4,16 @@ from typing import Any, Callable, cast, get_type_hints
 
 from ..utility import find_duplicates
 
-MergeFunc = Callable[..., Any]
+CombineFunc = Callable[..., Any]
 
 
 @dataclass(frozen=True)
-class Merger:
-    """Callable that merges multiple objects into one."""
+class Combiner:
+    """Callable that combines multiple objects into one."""
 
-    func: MergeFunc
+    func: CombineFunc
     arg_positions: dict[type, int] = field(init=False)
+    output_type: type = field(init=False)  # Return type of `func`
 
     def __post_init__(self) -> None:
         # Extract the type annotations of `func`. Note that we use `get_type_hints`,
@@ -30,7 +31,7 @@ class Merger:
         )
         for nonsimple_arg_type in non_simple_arg_types:
             raise ValueError(
-                "Merge func must use simple (e.g., non-union) type annotations for all"
+                "Combine func must use simple (e.g., non-union) type annotations for all"
                 f' its arguments. Type "{nonsimple_arg_type}" is non-simple.'
             )
         arg_types = cast(list[type], arg_types)
@@ -42,14 +43,16 @@ class Merger:
         # literals (but the latter does).
         parameters = signature(self.func).parameters
         if any(p.annotation is Signature.empty for p in parameters.values()):
-            raise ValueError("Merge func must have a type annotation for all arguments")
+            raise ValueError(
+                "Combine func must have a type annotation for all arguments"
+            )
         # Ensure that `func` has at least two arguments
         if len(arg_types) < 2:
-            raise ValueError("Merge func must have at least two arguments")
+            raise ValueError("Combine func must have at least two arguments")
         # Ensure that `func`'s arguments has distinct type annotations (no duplicates).
         for duplicate_type in find_duplicates(arg_types):
             raise ValueError(
-                f'Merge function has multiple arguments of type "{duplicate_type}". '
+                f'Combine function has multiple arguments of type "{duplicate_type}". '
                 "Argument types must be unique."
             )
         # Remember the argument positions based on their type. We need this in
@@ -58,13 +61,25 @@ class Merger:
         # We use `object.__setattr__` since this class is frozen
         object.__setattr__(self, "arg_positions", arg_positions)
 
+        # Cache the return type for convenience as well
+        try:
+            return_type = type_hints["return"]
+        except KeyError:
+            raise ValueError("Combine func must specify the return type")
+        if not isclass(return_type):
+            raise ValueError(
+                "Combine func must use a simple type annotation for its return type."
+                f' Type "{return_type}" is non-simple.'
+            )
+        object.__setattr__(self, "output_type", return_type)
+
     @property
     def arg_types(self) -> frozenset[type]:
         """Return a set of the argument types."""
         return frozenset(self.arg_positions)
 
     def __call__(self, *args: Any) -> Any:
-        """Merge the given objects.
+        """Combine the given objects.
 
         For convenience, you can give the arguments in any order. We automatically
         re-order the arguments before we pass them along to the underlying `func`.

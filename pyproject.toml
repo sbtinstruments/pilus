@@ -18,14 +18,11 @@ networkx = "^2.8.4"
 python-magic = "^0.4.27"
 
 [tool.poetry.group.dev.dependencies]
-isort = "^5.8.0"
-pydocstyle = "^6.0.0"
 pytest = "^8.2.2"
 pyfakefs = "^5.6.0"
-black = "^22.3.0"
-mypy = "^0.930"
+mypy = "^1.10.1"
 pre-commit = "^2.8.2"
-pylint = "^2.12.2"
+ruff = "^0.5.2"
 
 [tool.poetry.group.analysis]
 optional = true

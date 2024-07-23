@@ -1,8 +1,7 @@
 import logging
-from enum import Enum, unique
 from os import PathLike
 from pathlib import Path
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any, Optional, Literal
 
 # from zipfile import ZipFile
 from ..._magic import Medium, MediumSpec, detect_media_type
@@ -15,12 +14,12 @@ _LOGGER = logging.getLogger(__name__)
 _MANIFEST_PATH = Path("manifest.json")
 
 
-@unique
-class MissingDeserializerPolicy(Enum):
-    """What to do when there is no deserializer for a media type."""
 
-    STORE_DATA = "store-data"
-    STORE_METADATA = "store-metadata"
+StoreMode = Literal[
+    "store-reference-to-data",
+    "store-raw-data",
+    "store-deserialized-data"
+]
 
 
 # TODO: Add a ZIP-based loader
@@ -33,9 +32,9 @@ class MissingDeserializerPolicy(Enum):
 def from_dir(
     directory: Annotated[Path, "application/vnd.sbt.box"],
     *,
-    missing_deserializer_policy: Optional[MissingDeserializerPolicy] = None,
-    root: Optional[Path] = None,
-    manifest: Optional[Manifest] = None,
+    mode: StoreMode | None = None,
+    root: Path | None = None,
+    manifest: Manifest | None = None,
 ) -> Box:
     """Return box based on the directory.
 
@@ -43,8 +42,8 @@ def from_dir(
     deserializers in the global registry.
     """
     # Default arguments
-    if missing_deserializer_policy is None:
-        missing_deserializer_policy = MissingDeserializerPolicy.STORE_METADATA
+    if mode is None:
+        mode = "store-reference-to-data"
     if root is None:
         root = directory
     if not directory.is_dir():
@@ -61,7 +60,7 @@ def from_dir(
     resolved_children: dict[str, Any] = {
         c.name: _resolve_child(
             c,
-            missing_deserializer_policy=missing_deserializer_policy,
+            mode=mode,
             root=root,
             manifest=manifest,
         )
@@ -90,7 +89,7 @@ def _resolve_child(
 def _identify_and_deserialize_file(
     file: Path,
     *,
-    missing_deserializer_policy: MissingDeserializerPolicy,
+    mode: StoreMode,
     root: Path,
     manifest: Manifest,
 ) -> Any:
@@ -102,20 +101,23 @@ def _identify_and_deserialize_file(
         media_type = manifest.get_media_type(relative_path)
     except LookupError:
         media_type = detect_media_type(file)
-    # Find preferred type
-    try:
-        file_spec = MediumSpec(raw_type=PathLike, media_type=media_type)
-        output_type = FORGE._morphers.spec_to_type(file_spec)
-        # Try to deserialize the file into a preferred type
-        input_medium = Medium(raw=file, media_type=media_type)
-        return FORGE.deserialize(input_medium, output_type)
-    except (ValueError, PilusMissingMorpherError):
-        medium: Medium
-        if missing_deserializer_policy is MissingDeserializerPolicy.STORE_DATA:
-            medium = Medium(raw=file.read_bytes(), media_type=media_type)
-        elif missing_deserializer_policy is MissingDeserializerPolicy.STORE_METADATA:
-            medium = Medium(raw=file, media_type=media_type)
-        else:
-            # We cover all `MissingDeserializerPolicy` values
-            assert False
-        return medium
+
+    # Store the raw (binary) data directly
+    if mode == "store-raw-data":
+        return Medium(raw=file.read_bytes(), media_type=media_type)
+
+    # Store a reference (resolved file path) to the data.
+    #
+    # It's important that it's a resolved file path (and not, e.g., a relative file
+    # path) since we don't have the `root` path of the box directory in the later
+    # stages (e.g., when we want to actually load the file).
+    input_medium = Medium(raw=file.resolve(), media_type=media_type)
+    if mode == "store-reference-to-data":
+        return input_medium
+
+    # Attempt to deserialize the data using the first applicable
+    # python type.
+    assert mode == "store-deserialized-data"
+    file_spec = MediumSpec(raw_type=PathLike, media_type=media_type)
+    output_type = FORGE._morphers.spec_to_type(file_spec)
+    return FORGE.deserialize(input_medium, output_type)

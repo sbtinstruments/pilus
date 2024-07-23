@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Protocol, Union, runtime_checkable
+from typing import Any, Protocol, Union, runtime_checkable
 
 from .._magic import MediumSpec, RawMedium
 
@@ -17,22 +17,21 @@ ShapeSpec = type | MediumSpec
 
 @runtime_checkable
 class ConvertFunc(Protocol):
-    def __call__(self, __input_medium: RawMedium, __output_medium: RawMedium) -> None:
-        ...
+    def __call__(
+        self, __input_medium: RawMedium, __output_medium: RawMedium
+    ) -> None: ...
 
 
 @runtime_checkable
 class DeserializeFunc(Protocol):
-    def __call__(self, __input_medium: RawMedium) -> Any:
-        ...
+    def __call__(self, __input_medium: RawMedium) -> Any: ...
 
 
 @runtime_checkable
 class SerializeFunc(Protocol):
     # We use type `Any` for `__output_medium` (and not `RawMedium`) to avoid
     # covariance/contravariance issues.
-    def __call__(self, __input_data: Any, __output_medium: Any) -> None:
-        ...
+    def __call__(self, __input_data: Any, __output_medium: Any) -> None: ...
 
 
 # Note that `TransformFunc` is very lenient. Effectively, it makes
@@ -41,8 +40,7 @@ class SerializeFunc(Protocol):
 # context managers.
 @runtime_checkable
 class TransformFunc(Protocol):
-    def __call__(self, __input_data: Any) -> Any:
-        ...
+    def __call__(self, __input_data: Any) -> Any: ...
 
 
 MorphFunc = Union[ConvertFunc, DeserializeFunc, SerializeFunc, TransformFunc]

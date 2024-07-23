@@ -38,24 +38,20 @@ class MorphGraph:
     def _generate_edges_to_medium_spec(self, spec: MediumSpec) -> None:
         if spec.raw_type is BinaryIO:
             path_to_io = Morpher(
-                input=MediumSpec(raw_type=PathLike,
-                                 media_type=spec.media_type),
+                input=MediumSpec(raw_type=PathLike, media_type=spec.media_type),
                 output=spec,
                 func=_file_to_io,
             )
             self._add_morpher_if_not_exists(path_to_io)
         elif spec.raw_type is bytes:
             path_to_io = Morpher(
-                input=MediumSpec(raw_type=PathLike,
-                                 media_type=spec.media_type),
-                output=MediumSpec(raw_type=BinaryIO,
-                                  media_type=spec.media_type),
+                input=MediumSpec(raw_type=PathLike, media_type=spec.media_type),
+                output=MediumSpec(raw_type=BinaryIO, media_type=spec.media_type),
                 func=_file_to_io,
             )
             self._add_morpher_if_not_exists(path_to_io)
             io_to_data = Morpher(
-                input=MediumSpec(raw_type=BinaryIO,
-                                 media_type=spec.media_type),
+                input=MediumSpec(raw_type=BinaryIO, media_type=spec.media_type),
                 output=MediumSpec(raw_type=bytes, media_type=spec.media_type),
                 func=_io_to_data,
             )
@@ -74,13 +70,16 @@ class MorphGraph:
 
     def get_morphs(
         self, in_spec: ShapeSpec, out_spec: ShapeSpec
-    ) -> Iterator[MorphFunc]:
+    ) -> Iterable[MorphFunc]:
         """Return morph functions that morphs `in_spec` into `out_spec`."""
+        # Early out if there is nothing to morph
+        if in_spec == out_spec:
+            return tuple()
         # We find the shortest sequence of morphs that takes
         # us from the source type into the destination type.
         try:
             path: list[Any] = nx.shortest_path(self._graph, in_spec, out_spec)
-        except nx.NodeNotFound as exc:
+        except (nx.NodeNotFound, nx.NetworkXNoPath) as exc:
             raise PilusMissingMorpherError(
                 f'Can not find morph chain that converts from "{in_spec}" to'
                 f' "{out_spec}"'
@@ -97,7 +96,8 @@ class MorphGraph:
                 target_node = edge[1]
                 if not isinstance(target_node, MediumSpec):
                     assert isinstance(target_node, type) or isinstance(
-                        get_origin(target_node), type)
+                        get_origin(target_node), type
+                    )
                     return cast(type, target_node)
         except KeyError:
             pass

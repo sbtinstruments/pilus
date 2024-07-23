@@ -7,8 +7,8 @@ from ..snipdb import (
     SnipAttrDeclMap,
     SnipDb,
     SnipEnumDecl,
-    SnipPart,
-    SnipPartMetadata,
+    SnipRow,
+    SnipRowMetadata,
     create_attribute_map,
 )
 
@@ -33,7 +33,7 @@ def iqs_to_attr_decls(aggregate: IqsAggregate) -> SnipAttrDeclMap:
 
 def iqs_to_snip_parts(
     aggregate: IqsAggregate, attr_decls: SnipAttrDeclMap
-) -> Iterable[SnipPart[Any]]:
+) -> Iterable[SnipRow[Any]]:
     """Convert IQS aggregate to snip parts."""
     name = "diff"
     for site_name, site in aggregate.sites.items():
@@ -54,8 +54,8 @@ def iqs_to_snip_parts(
                     channel=channel_name,
                     part=part_name,
                 )
-                metadata = SnipPartMetadata(name=name, attributes=attributes)
-                yield SnipPart(value=wave, metadata=metadata)
+                metadata = SnipRowMetadata(name=name, attributes=attributes)
+                yield SnipRow(content=wave, metadata=metadata)
 
 
 def iqs_aggregate_to_snipdb(iqs_aggregate: IqsAggregate) -> SnipDb:

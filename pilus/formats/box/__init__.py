@@ -1,1 +1,1 @@
-from ._box_from_dir import MissingDeserializerPolicy, from_dir
+from ._box_from_dir import from_dir

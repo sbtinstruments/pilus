@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Annotated, Any
 
 from immutables import Map
 from pydantic import BaseModel, ConfigDict
@@ -13,8 +13,8 @@ from ._snip_attributes import SnipAttr
 SnipAttributeMap = Map[str, SnipAttr]
 
 
-class SnipPartMetadata(BaseModel):
-    """Metadata (name, attributes) for a snip part (deserialized file)."""
+class SnipRowMetadata(BaseModel):
+    """Metadata (name, attributes) for a snip row."""
 
     model_config = ConfigDict(
         frozen=True,
@@ -24,37 +24,46 @@ class SnipPartMetadata(BaseModel):
     )
 
     name: str
-    attributes: SnipAttributeMap = Field(default_factory=dict)
+    attributes: Annotated[SnipAttributeMap, Field(default_factory=Map)]
+    suffixes: tuple[str, ...] = tuple()
 
     @classmethod
     def from_file_name(
         cls, file_name: str, *, attr_decls: SnipAttrDeclMap
-    ) -> SnipPartMetadata:
+    ) -> SnipRowMetadata:
         """Split a file name into the corresponding snip components.
 
         Take the following string for example:
 
-            "diff--site0--hf--im.wav"
+            "diff--site0--hf--im.fragments.wav"
 
         We split this into:
 
             name: "diff"
             attributes: "site0", "hf", and "im"
+            suffixes: (".fragments", ".wav")
 
-        Note that we discard the suffix(es) (e.g., ".wav").
         """
         # Example:
         #   "diff--site0--hf--im.wav-meta.json"
         # splits into
         #   ("diff--site0--hf--im", ".wav-meta.json")
-        rest, _ = split_at_suffixes(file_name)
+        rest, suffixes = split_at_suffixes(file_name)
         # Get name and attribytes
         name, raw_attributes = _extract_raw_attribute(rest)
         # Parse raw attributes
         attributes: SnipAttributeMap = Map(
             attr_decls.parse_raw_attributes(raw_attributes)
         )
-        return cls(name=name, attributes=attributes)
+        return cls(name=name, attributes=attributes, suffixes=suffixes)
+
+    def exclude_tracing(self) -> SnipRowMetadata:
+        """Return subset of this metadata that excludes traceability fields.
+
+        In practice, this excludes the `suffixes` field since we only keep
+        that around for traceability (e.g., "what kind of file did this come from?").
+        """
+        return SnipRowMetadata(name=self.name, attributes=self.attributes)
 
 
 def create_attribute_map(

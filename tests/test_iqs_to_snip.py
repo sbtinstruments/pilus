@@ -16,9 +16,12 @@ def test_iqs_from_io(fs: FakeFilesystem) -> None:
     fs.add_real_file(IQS_FILE, target_path=data_file)
     snip_db = SnipDb.from_file(data_file)
 
-    wave = snip_db.get(Wave)
-    assert wave is not None
+    wave = snip_db.get_first(Wave)
+    assert isinstance(wave, Wave)
+
+    wave = snip_db.get_one(Wave, site="site0", channel="hf", part="re")
+    assert isinstance(wave, Wave)
 
     wave_file = Path("data.wav")
     with wave_file.open("wb") as io:
-        wav_format.to_io(wave.value.lpcm, io)
+        wav_format.to_io(wave.lpcm, io)

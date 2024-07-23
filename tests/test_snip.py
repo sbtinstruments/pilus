@@ -2,9 +2,11 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from pyfakefs.fake_filesystem import FakeFilesystem
+from tinydb import where
 
-from pilus.basic import Extrema, Extremum, ExtremumType, Wave, WaveMeta
-from pilus.snipdb import SnipDb
+from pilus._magic import Medium
+from pilus.basic import Extrema, Extremum, ExtremumType, Lpcm, Wave, WaveMeta
+from pilus.snipdb import SnipDb, SnipRow
 
 from ._assets import ASSETS_DIR
 
@@ -83,16 +85,33 @@ def test_snip(fs: FakeFilesystem) -> None:
 
     project = SnipDb.from_dir(Path("project.snip"))
 
-    extrema_part = project.get(
-        Extrema, name="part0", settings="production", id=32, user="1000"
+    for row in project:
+        assert isinstance(row, SnipRow)
+        assert isinstance(row.content, Medium)
+
+    medium = project.get_one(
+        Medium, where("name") == "part0", settings="production", user="1000"
     )
-    assert extrema_part is not None
-    extrema = extrema_part.value
+    assert isinstance(medium, Medium)
+    assert isinstance(medium.raw, Path)
+    assert medium.media_type == "application/vnd.sbt.extrema+json"
+
+    extrema_part = project.get_one(
+        SnipRow[Extrema],
+        where("name") == "part0",
+        where("suffixes") == (".extrema", ".json"),
+        settings="production",
+        id=32,
+        user="1000",
+    )
+    extrema = extrema_part.content
 
     extrema_attributes = extrema_part.metadata.attributes
     assert extrema_attributes["settings"].value == "production"
     assert extrema_attributes["id"].value == 32
     assert extrema_attributes["user"].value == "1000"
+    extrema_suffixes = extrema_part.metadata.suffixes
+    assert extrema_suffixes == (".extrema", ".json")
 
     one_us = timedelta(microseconds=1)
     assert extrema == (
@@ -109,14 +128,17 @@ def test_snip(fs: FakeFilesystem) -> None:
     )
 
     print("=======")
-    for part in project:
-        print(f"{type(part.value)=} {part.metadata=}")
+    for row in project:
+        print(f"{type(row.content)=} {row.metadata=}")
 
-    wave_part = project.get(Wave)
-    assert wave_part is not None
-    wave = wave_part.value
+    # Snip automatically combines the `.wav` and `.wave-meta.json` into one when
+    # we query for `Wave`.
+    wave = project.get_one(Wave)
+    assert isinstance(wave, Wave)
     assert wave.lpcm.byte_depth == 2
 
-    wave_meta_part = project.get(WaveMeta)
-    # We merge `WaveMeta` into `Wave`, so the former isn't present in the output
-    assert wave_meta_part is None
+    # We can stil get individual (non-combined) parts if we want to
+    wave_meta = project.get_one(WaveMeta)
+    assert isinstance(wave_meta, WaveMeta)
+    lpcm = project.get_one(Lpcm)
+    assert isinstance(lpcm, Lpcm)

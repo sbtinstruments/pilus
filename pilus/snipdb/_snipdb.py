@@ -1,26 +1,21 @@
 from __future__ import annotations
 
-from functools import reduce
 from pathlib import Path
-from typing import Any, ClassVar, Iterable, Iterator, Optional, Type, TypeVar
+from typing import Any, ClassVar, Iterable, Iterator, TypeVar
 
-from tinydb import TinyDB, where
-from tinydb.queries import Query, QueryInstance
-from tinydb.storages import MemoryStorage
-from typeguard import check_type
+from pydantic.v1.utils import lenient_issubclass
 
 from .._magic import Medium
 from ..forge import FORGE, ForgeIO
 from ._snip_attribute_declaration_map import SnipAttrDeclMap
-from ._snip_attributes import SnipAttr
-from ._snip_part import SnipPart
-from ._snip_part_metadata import SnipAttributeMap, SnipPartMetadata
+from ._snip_row import SnipRow
+from ._snipdb_core import SnipDbCore
 
 T = TypeVar("T")
 
 
 class SnipDb(ForgeIO):
-    """Immutable, in-memory database of snip parts (deserialized files).
+    """Immutable, in-memory database of files in a directory.
 
     Examples:
         /manifest.json
@@ -73,105 +68,77 @@ class SnipDb(ForgeIO):
 
     def __init__(
         self,
-        parts: Iterable[SnipPart[Any]] = tuple(),
+        rows: Iterable[SnipRow[Any]] = tuple(),
         attr_decls: SnipAttrDeclMap = SnipAttrDeclMap(),
     ) -> None:
-        self._db = TinyDB(storage=MemoryStorage)
-        documents = (
-            {
-                "value": part.value,
-                "name": part.metadata.name,
-                "attributes": part.metadata.attributes,
-            }
-            for part in parts
-        )
-        self._parts = self._db.table("part")
-        self._parts.insert_multiple(documents)
-        # Ensure that the parts' attributes have corresponding declarations in the
-        # given declaration map.
-        attributes = (a for p in self for a in p.metadata.attributes.values())
-        if not attr_decls.has_declarations_for(attributes):
-            raise ValueError("A part has an undeclared attribute")
-        self._attr_decls = attr_decls
-
-    def get(
-        self, type_: Optional[Type[T]] = None, name: Optional[str] = None, **kwargs: Any
-    ) -> Optional[SnipPart[T]]:
-        """Return the first part that matches the query arguments.
-
-        Returns `None` if there are no matches.
-        """
-        query = self._args_to_query(type_, name, **kwargs)
-        document = self._parts.get(query)
-        if document is None:
-            return None
-        return _doc_to_part(document)
-
-    def search(
-        self, type_: Optional[Type[T]] = None, name: Optional[str] = None, **kwargs: Any
-    ) -> Iterable[SnipPart[T]]:
-        """Return iterable of all parts that matches the query arguments."""
-        query = self._args_to_query(type_, name, **kwargs)
-        documents = self._parts.search(query)
-        return (_doc_to_part(doc) for doc in documents)
-
-    def _args_to_query(
-        self, type_: Optional[type] = None, name: Optional[str] = None, **kwargs: str
-    ) -> QueryInstance:
-        AttributeNameAndValues = frozenset[tuple[str, SnipAttr]]
-        attributes: Optional[AttributeNameAndValues] = None
-        # Consider all keyword arguments as attribute filters
-        if kwargs:
-            attributes = frozenset(self._attr_decls.parse_kwargs(**kwargs))
-        # Convert argument to queries
-        queries: list[QueryInstance] = []
-        if type_ is not None:
-
-            def _test_type(value: Any) -> bool:
-                try:
-                    check_type("value", value, type_)
-                except TypeError:
-                    return False
-                return True
-
-            queries.append(where("value").test(_test_type))
-        if name is not None:
-            queries.append(where("name") == name)
-        if attributes is not None:
-
-            def _test_attrs(value: SnipAttributeMap) -> bool:
-                assert attributes is not None
-                name_and_values: AttributeNameAndValues = frozenset(value.items())
-                return name_and_values.issuperset(attributes)
-
-            # The typings for `test` assume that it receives a `Mapping`. This is
-            # probably the usual case for a TinyDB table. In our case, however, we
-            # use in-memory storage so we can store python objects directly (no
-            # conversion to dict first). Therefore, the `test` function may receive
-            # a custom type and not just a `Mapping`.
-            subquery = where("attributes").test(_test_attrs)  # type: ignore[arg-type]
-            queries.append(subquery)
-        # Raise error if there are no queries
-        if not queries:
-            raise ValueError("You must provide at least one argument")
-        # Combine all queries into one
-        query = reduce(Query.__and__, queries)
-        return query
+        self._core = SnipDbCore(rows, attr_decls)
 
     @classmethod
-    def from_dir(cls, directory: Path, *, media_type: Optional[str] = None) -> SnipDb:
+    def from_dir(cls, directory: Path, *, media_type: str | None = None) -> SnipDb:
         """Deserialize directory into an instance of this class."""
         input_medium = Medium.from_raw(directory, media_type=media_type)
         return FORGE.deserialize(input_medium, cls)
 
-    def __iter__(self) -> Iterator[SnipPart[Any]]:
-        """Return iterator of all parts in this database."""
-        return (_doc_to_part(doc) for doc in self._parts)
+    def get_one(self, type_: type[T], *args: Any, **kwargs: Any) -> T:
+        """Return the unique object that matches the query arguments.
+
+        Wrap `type_` as `SnipRow[type_]` if you also want the metadata.
+
+        Raises `PilusNoResultFound` if there is no such object.
+        Raises `PilusMultipleResultsFound` if there are multiple objects.
+
+        Use `get_first` if you don't care about uniqueness and just want the first
+        matching object.
+        """
+        row = self._core.get_one(_content_type(type_), *args, **kwargs)
+        return _row_to_type(row, type_)  # type: ignore[return-value]
+
+    def get_first(self, type_: type[T], *args: Any, **kwargs: Any) -> T | None:
+        """Return the first row that matches the query arguments.
+
+        Wrap `type_` as `SnipRow[type_]` if you also want the metadata.
+
+        Returns `None` if there are no matches.
+        """
+        row = self._core.get_first(_content_type(type_), *args, **kwargs)
+        return None if row is None else _row_to_type(row, type_)  # type: ignore[arg-type, return-value]
+
+    def query(self, type_: type[T], *args: Any, **kwargs: Any) -> Iterable[T]:
+        """Return all rows (if any) that match the given arguments.
+
+        Wrap `type_` as `SnipRow[type_]` if you also want the metadata.
+
+        This function goes through *all* rows and yields:
+
+         * Instances of `type_` that we can return directly.
+         * A medium (file path, IO stream, pointer to memory, ...) that we can
+           deserialize/transform into `type_`.
+         * A collection of shapes (instance or medium) that we can combine into
+           `type_`.
+
+        For the last case (combination) we even look for *any* shape that we can
+        deserialize/transform into some intermediary type that we then combine
+        into `type_`!
+        """
+        rows = self._core.query(_content_type(type_), *args, **kwargs)
+        return (_row_to_type(row, type_) for row in rows)  # type: ignore[misc]
+
+    def __iter__(self) -> Iterator[SnipRow[Any]]:
+        """Return iterator of all rows in this database."""
+        return self._core.__iter__()
 
 
-def _doc_to_part(document: dict[str, Any]) -> SnipPart[Any]:
-    value = document["value"]
-    metadata = SnipPartMetadata(
-        name=document["name"], attributes=document["attributes"]
-    )
-    return SnipPart(value=value, metadata=metadata)
+def _row_to_type(row: SnipRow[T], type_: type[T] | type[SnipRow[T]]) -> T | SnipRow[T]:
+    if lenient_issubclass(type_, SnipRow):
+        return row
+    return row.content
+
+
+def _content_type(type_: type[T] | type[SnipRow[T]]) -> type[T]:
+    if lenient_issubclass(type_, SnipRow):
+        assert issubclass(type_, SnipRow)
+        content_field = type_.model_fields["content"]
+        core_type = content_field.annotation
+        assert core_type is not None
+        return core_type
+    return type_  # type: ignore[return-value]

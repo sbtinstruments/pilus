@@ -16,9 +16,16 @@ from typing import (
 from pydantic import BaseModel
 
 from .._magic import Medium, MediumSpec, RawMediumType
-from ._merger import Merger
-from ._merger_map import MergerMap
-from ._morph import DeserializeFunc, Morpher, SerializeFunc, TransformFunc
+from ._combiner import Combiner
+from ._combiner_map import CombinerMap
+from ._morph import (
+    DeserializeFunc,
+    Morpher,
+    SerializeFunc,
+    Shape,
+    ShapeSpec,
+    TransformFunc,
+)
 from ._morph_graph import MorphGraph
 
 P = ParamSpec("P")
@@ -59,7 +66,7 @@ class Forge:
 
     def __init__(self) -> None:
         self._morphers = MorphGraph()
-        self._mergers = MergerMap()
+        self._combiners = CombinerMap()
 
     def register_deserializer(self, func: Callable[P, R]) -> Callable[P, R]:
         """Register the decorated deserializer."""
@@ -99,8 +106,7 @@ class Forge:
             output_raw_type = PathLike
         else:
             ValueError("Unsupported first argument type")
-        output_spec = MediumSpec(
-            raw_type=output_raw_type, media_type=output_media_type)
+        output_spec = MediumSpec(raw_type=output_raw_type, media_type=output_media_type)
         morpher = Morpher(input=input_type, output=output_spec, func=func)
         self.add_morpher(morpher)
         # We don't change the function itself, we simply register it.
@@ -109,11 +115,73 @@ class Forge:
     def add_morpher(self, morpher: Morpher) -> None:
         self._morphers.add_morpher(morpher)
 
+    def deserialize(self, input_medium: Medium, output_type: Type[T]) -> T:
+        """Deserialize the input medium into the output type.
+
+        This is just a convenience method that delegates the real work to `reshape`.
+        """
+        return self.reshape(input_medium, output_type)
+
+    def transform(self, input_data: Any, output_type: Type[T]) -> T:
+        """Transform the input data into the output type.
+
+        This is just a convenience method that delegates the real work to `reshape`.
+        """
+        return self.reshape(input_data, output_type)
+
+    def reshape(self, input_shape: Shape, output_type: type[T]) -> T:
+        """Deserialize or transform the input shape into the output type.
+
+        This is just a convenience method that delegates the real work to
+        `get_reshape_func`.
+        """
+        func = self.get_reshape_func(input_shape, output_type)
+        return func(input_shape)
+
+    def get_reshape_func(
+        self, input_shape: Shape, output_type: type[T]
+    ) -> Callable[[Shape], T]:
+        """Return function that deserializes/transforms the input shape.
+
+        This method dynamically chains together a reshape function based on the
+        available morphs in this forge.
+
+        Raises `PilusMissingMorpherError` if it's impossible to construct the
+        reshape function.
+        """
+        input_shape_spec: ShapeSpec
+        if isinstance(input_shape, Medium):
+            input_shape_spec = input_shape.spec
+        else:
+            input_shape_spec = type(input_shape)
+        # Find a sequence of morphs that takes us from the input medium
+        # to the output type.
+        morphs = tuple(self._morphers.get_morphs(input_shape_spec, output_type))
+
+        def _reshape_func(shape_: Shape) -> T:
+            result = shape_.raw if isinstance(shape_, Medium) else shape_
+            with ExitStack() as stack:
+                # Apply each morph in turn.
+                for morph in morphs:
+                    # Most morphs are simple, unary functions. Single input
+                    # and single output.
+                    assert isinstance(morph, (DeserializeFunc, TransformFunc))
+                    result = morph(result)
+                    # Some morphs, however, return context managers. E.g., to keep
+                    # track of open file handles as done in `_file_to_io`. For these
+                    # morphs, we use the `stack` to make sure that we close all open
+                    # file handles afterwards.
+                    result = _maybe_enter(stack, result)
+            # TODO: Assert isinstance(result, output_type) instead here? Or is there
+            # a problem with generics?
+            return cast(T, result)
+
+        return _reshape_func
+
     def convert(self, input_medium: Medium, output_medium: Medium) -> None:
         # Find a sequence of morphs that takes us from the input medium
         # to the output type.
-        morphs = tuple(self._morphers.get_morphs(
-            input_medium.spec, output_medium.spec))
+        morphs = tuple(self._morphers.get_morphs(input_medium.spec, output_medium.spec))
         with ExitStack() as stack:
             result: Any = input_medium.raw
             # Apply each morph in turn.
@@ -132,29 +200,10 @@ class Forge:
             assert isinstance(last_morph, SerializeFunc)
             last_morph(result, output_medium.raw)
 
-    def deserialize(self, input_medium: Medium, output_type: Type[T]) -> T:
-        # Find a sequence of morphs that takes us from the input medium
-        # to the output type.
-        morphs = self._morphers.get_morphs(input_medium.spec, output_type)
-        with ExitStack() as stack:
-            result: Any = input_medium.raw
-            # Apply each morph in turn.
-            for morph in morphs:
-                # Most morphs are simple, unary functions. Single input
-                # and single output.
-                assert isinstance(morph, (DeserializeFunc, TransformFunc))
-                result = morph(result)
-                # Some morphs, however, return context managers. E.g., to keep
-                # track of open file handles. For these morphs, we use the
-                # `stack` to make sure that we close all open file handles afterwards.
-                result = _maybe_enter(stack, result)
-        return cast(T, result)
-
     def serialize(self, input_data: Any, output_medium: Medium) -> None:
         # Find a sequence of morphs that takes us from the input medium
         # to the output type.
-        morphs = tuple(self._morphers.get_morphs(
-            type(input_data), output_medium.spec))
+        morphs = tuple(self._morphers.get_morphs(type(input_data), output_medium.spec))
         with ExitStack() as stack:
             result: Any = input_data
             # Apply each morph in turn.
@@ -172,9 +221,6 @@ class Forge:
             assert isinstance(last_morph, SerializeFunc)
             last_morph(result, output_medium.raw)
 
-    def transform(self, input_data: Any, output_type: Type[T]) -> T:
-        raise NotImplementedError()
-
     def register_model(self, media_type: str) -> Callable[[Type[M]], Type[M]]:
         """Associate the class with the given media type.
 
@@ -182,8 +228,7 @@ class Forge:
         """
         # Early out on unsupported media types
         if not media_type.endswith("+json"):
-            raise ValueError(
-                'Only supports media types with the "+json" suffix')
+            raise ValueError('Only supports media types with the "+json" suffix')
 
         def _decorator(cls: Type[M]) -> Type[M]:
             morpher = Morpher(
@@ -197,9 +242,9 @@ class Forge:
         return _decorator
 
     def register_combiner(self, func: Callable[P, R]) -> Callable[P, R]:
-        """Register the merger."""
-        merger = Merger(func)
-        self._mergers.add_merger(merger)
+        """Register the combiner."""
+        combiner = Combiner(func)
+        self._combiners.add_combiner(combiner)
         # We don't change the function itself, we simply register it.
         return func
 

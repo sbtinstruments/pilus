@@ -1,5 +1,6 @@
 from json import JSONDecodeError
 from typing import Any
+
 from pydantic import ValidationError
 
 
@@ -13,6 +14,15 @@ class PilusOSError(PilusBaseError, OSError):
 
 
 PilusValidationError = ValidationError
+
+
+### ORM/database-like errors
+class PilusNoResultFound(PilusBaseError):
+    """Did not find any results."""
+
+
+class PilusMultipleResultsFound(PilusBaseError):
+    """Required a single result but found multiple."""
 
 
 ### Type conversions
@@ -52,7 +62,6 @@ class PilusMissingDataError(PilusDeserializeError):
 
 class PilusUnicodeDecodeError(PilusDeserializeError, UnicodeDecodeError):
     """Could decode string in an pilus medium."""
-
 
 
 ### Overall

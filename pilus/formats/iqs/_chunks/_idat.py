@@ -38,6 +38,7 @@ class IdatChunk:
         *chunks: IdatChunk,
         ihdr: IhdrChunk,
         contiguous_tolerance: Optional[timedelta] = None,
+        fill_missing_values_with: Optional[bytes] = None,
     ) -> IdatChunk:
         """Merge all the chunks into one.
 
@@ -74,8 +75,12 @@ class IdatChunk:
                 total_byte_length = total_logical_length * channel_header.byte_depth
                 # We pre-allocate the memory up front. This avoids a lot of memory
                 # allocations inside the for loop itself.
-                merged_re = bytearray(total_byte_length)
-                merged_im = bytearray(total_byte_length)
+                if fill_missing_values_with is None:
+                    merged_re = bytearray(total_byte_length)
+                    merged_im = bytearray(total_byte_length)
+                else:
+                    merged_re = bytearray(fill_missing_values_with * total_byte_length)
+                    merged_im = bytearray(fill_missing_values_with * total_byte_length)
                 for chunk in chunks:
                     # We compute `offset` based on the chunk's start time to
                     # account for non-overlapping chunks. E.g., if the system time
@@ -83,7 +88,7 @@ class IdatChunk:
                     start_delta = chunk.start_time - first_chunk.start_time
                     start_delta_ns = start_delta.total_seconds() * 1e9
                     offset = (
-                        int(start_delta_ns // channel_header.time_step_ns)
+                        round(start_delta_ns / channel_header.time_step_ns)
                         * channel_header.byte_depth
                     )
                     site = chunk.sites[site_name]
@@ -125,8 +130,7 @@ class IdatChunk:
         *chunks: IdatChunk,
         tolerance: Optional[timedelta] = None,
     ) -> None:
-        """Raise an `PilusDeserializeError` error if the given chunks are not adjoined in time.
-        """
+        """Raise an `PilusDeserializeError` error if the given chunks are not adjoined in time."""
         # Default arguments
         if tolerance is None:
             tolerance = timedelta(microseconds=2)

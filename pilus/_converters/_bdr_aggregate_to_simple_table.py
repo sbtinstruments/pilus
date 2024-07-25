@@ -12,7 +12,7 @@ from ..basic import (
 )
 from ..forge import FORGE, Morpher
 
-_COLUMN_NAMES: tuple[str] = (
+_COLUMN_NAMES: tuple[str, ...] = (
     "site",
     "channel",
     "part",

@@ -67,6 +67,7 @@ class Forge:
     def __init__(self) -> None:
         self._morphers = MorphGraph()
         self._combiners = CombinerMap()
+        self.lazy_registration: dict[str, Callable[[Forge], None]] = {}
 
     def register_deserializer(self, func: Callable[P, R]) -> Callable[P, R]:
         """Register the decorated deserializer."""
@@ -112,6 +113,17 @@ class Forge:
         # We don't change the function itself, we simply register it.
         return func
 
+    def register_transformer(self, func: TransformFunc) -> TransformFunc:
+        """Register the decorated transformer."""
+        type_hints = get_type_hints(func, include_extras=False)
+        # We expect that a transformer has a single argument
+        first_arg_type = next(iter(type_hints.values()))
+        return_type = type_hints["return"]
+        morpher = Morpher(input=first_arg_type, output=return_type, func=func)
+        self.add_morpher(morpher)
+        # We don't change the function itself, we simply register it.
+        return func
+
     def add_morpher(self, morpher: Morpher) -> None:
         self._morphers.add_morpher(morpher)
 
@@ -149,11 +161,26 @@ class Forge:
         Raises `PilusMissingMorpherError` if it's impossible to construct the
         reshape function.
         """
+        # Resolve input shape spec
         input_shape_spec: ShapeSpec
         if isinstance(input_shape, Medium):
             input_shape_spec = input_shape.spec
         else:
             input_shape_spec = type(input_shape)
+
+        # Automatically register additional morpgers based on the output type.
+        #
+        # This way, you don't have to `import` all dependencies up front. In turn,
+        # it allows pilus itself to stay light on dependencies. Want more functionality?
+        # simply add it on top via `lazy_registration` (plug-in style).
+        try:
+            # Note that we use `pop` so that we only call the registraion function once.
+            register_func = self.lazy_registration.pop(repr(output_type))
+        except KeyError:
+            pass
+        else:
+            register_func(self)
+
         # Find a sequence of morphs that takes us from the input medium
         # to the output type.
         morphs = tuple(self._morphers.get_morphs(input_shape_spec, output_type))

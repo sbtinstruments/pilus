@@ -33,6 +33,8 @@ R = TypeVar("R")
 T = TypeVar("T")
 M = TypeVar("M", bound=BaseModel)
 
+RegistrationFunc = Callable[["Forge"], None]
+
 
 class Forge:
     """One-stop toolbox to convert/deserialize/serialize/transform data.
@@ -67,7 +69,40 @@ class Forge:
     def __init__(self) -> None:
         self._morphers = MorphGraph()
         self._combiners = CombinerMap()
-        self.lazy_registration: dict[str, Callable[[Forge], None]] = {}
+        self._on_demand_registration_funcs: dict[str, RegistrationFunc] = {}
+
+    def register_on_demand(
+        self,
+        registration_func: RegistrationFunc,
+        *,
+        type_repr: str,
+    ) -> None:
+        """Call the given function the first time that we encounter the given type.
+
+        The `registration_func` *must* be idempotent. That is, it only has an effect
+        on the first call. Subsequent calls have no further effect.
+
+        The on-demand behaviour is useful for types that come from "heavy" third-party
+        libraries (e.g., numpy, scipy, pandas, polars, etc.). In essence, it allows you
+        to defer the `import` of said libraries until the time of use. The benefits are
+        three-fold:
+
+         1. We don't impose heavy imports (e.g., numpy) on users that don't use it.
+         2. It allows `Forge` itself to stay decoupled from specific types (e.g.,
+            `numpy.ndarray`) and hence dependency-free.
+         3. Our users can add as many types that they want to `Forge` (in an ad-hoc,
+            plugin-like fashion) without having to worry about the import/dependency
+            "costs" for other users.
+
+        On the flip side, we rely on a string-based representation of the type. E.g.,
+
+            repr(polars.Dataframe) == "<class 'polars.dataframe.frame.DataFrame'>"
+
+        Note how the representation contains some internal structure as well (e.g.,
+        the path to the specific submodule). If the representation changes, the
+        on-demand behaviour fails to trigger.
+        """
+        self._on_demand_registration_funcs[type_repr] = registration_func
 
     def register_deserializer(self, func: Callable[P, R]) -> Callable[P, R]:
         """Register the decorated deserializer."""
@@ -161,25 +196,15 @@ class Forge:
         Raises `PilusMissingMorpherError` if it's impossible to construct the
         reshape function.
         """
+        # On-demand registration of morphers for the given type
+        self._register_on_demand(output_type)
+
         # Resolve input shape spec
         input_shape_spec: ShapeSpec
         if isinstance(input_shape, Medium):
             input_shape_spec = input_shape.spec
         else:
             input_shape_spec = type(input_shape)
-
-        # Automatically register additional morpgers based on the output type.
-        #
-        # This way, you don't have to `import` all dependencies up front. In turn,
-        # it allows pilus itself to stay light on dependencies. Want more functionality?
-        # simply add it on top via `lazy_registration` (plug-in style).
-        try:
-            # Note that we use `pop` so that we only call the registraion function once.
-            register_func = self.lazy_registration.pop(repr(output_type))
-        except KeyError:
-            pass
-        else:
-            register_func(self)
 
         # Find a sequence of morphs that takes us from the input medium
         # to the output type.
@@ -274,6 +299,26 @@ class Forge:
         self._combiners.add_combiner(combiner)
         # We don't change the function itself, we simply register it.
         return func
+
+    def _register_on_demand(self, type_: type) -> None:
+        """Register additional morphers based on the given type.
+
+        This way, you don't have to `import` all dependencies up front. In turn,
+        it allows `Forge` itself to stay light on dependencies. Want more functionality?
+        simply add it on top via `register_on_demand` (plug-in style).
+        """
+        type_repr = repr(type_)
+        try:
+            # We use `pop` so that we avoid multiple calls to the registration
+            # function. Note that this does *not* forego the idempotence
+            # requirement of the registration function (at least not for now).
+            # It is merely a performance improvement (avoiding an unncessary
+            # function call).
+            register_func = self._on_demand_registration_funcs.pop(type_repr)
+        except KeyError:
+            pass
+        else:
+            register_func(self)
 
 
 def _maybe_enter(stack: ExitStack, obj: Any) -> Any:

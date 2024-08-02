@@ -1,4 +1,7 @@
+from collections.abc import Iterable
 from contextlib import AbstractContextManager, ExitStack
+from functools import partial, wraps
+from itertools import chain
 from os import PathLike
 from pathlib import Path
 from typing import (
@@ -27,6 +30,7 @@ from ._morph import (
     TransformFunc,
 )
 from ._morph_graph import MorphGraph
+from ._run_once import run_once
 
 P = ParamSpec("P")
 R = TypeVar("R")
@@ -69,18 +73,18 @@ class Forge:
     def __init__(self) -> None:
         self._morphers = MorphGraph()
         self._combiners = CombinerMap()
-        self._on_demand_registration_funcs: dict[str, RegistrationFunc] = {}
+        self._on_demand_registration_funcs: dict[str, Callable[[], None]] = {}
 
-    def register_on_demand(
+    def call_on_demand(
         self,
-        registration_func: RegistrationFunc,
         *,
-        type_repr: str,
-    ) -> None:
+        type_repr_any_of: Iterable[str] = (),
+        media_type_any_of: Iterable[str] = (),
+    ) -> Callable[[RegistrationFunc], Callable[[], None]]:
         """Call the given function the first time that we encounter the given type.
 
-        The `registration_func` *must* be idempotent. That is, it only has an effect
-        on the first call. Subsequent calls have no further effect.
+        The returned function always work on this specific `Forge` instance and is
+        idempotent.
 
         The on-demand behaviour is useful for types that come from "heavy" third-party
         libraries (e.g., numpy, scipy, pandas, polars, etc.). In essence, it allows you
@@ -102,7 +106,18 @@ class Forge:
         the path to the specific submodule). If the representation changes, the
         on-demand behaviour fails to trigger.
         """
-        self._on_demand_registration_funcs[type_repr] = registration_func
+
+        def _decorator(func: RegistrationFunc) -> Callable[[], None]:
+            idempotent_func = run_once(partial(func, self))
+
+            # TODO: Find more efficient way than to simply add each and every one
+            # to do a hash map. It's great for lookups (average case O(1)) though.
+            for shape_repr in chain(type_repr_any_of, media_type_any_of):
+                self._on_demand_registration_funcs[shape_repr] = idempotent_func
+
+            return idempotent_func
+
+        return _decorator
 
     def register_deserializer(self, func: Callable[P, R]) -> Callable[P, R]:
         """Register the decorated deserializer."""
@@ -196,15 +211,16 @@ class Forge:
         Raises `PilusMissingMorpherError` if it's impossible to construct the
         reshape function.
         """
-        # On-demand registration of morphers for the given type
-        self._register_on_demand(output_type)
-
         # Resolve input shape spec
         input_shape_spec: ShapeSpec
         if isinstance(input_shape, Medium):
             input_shape_spec = input_shape.spec
         else:
             input_shape_spec = type(input_shape)
+
+        # On-demand registration of morphers for the arguments
+        self._register_on_demand(input_shape)
+        self._register_on_demand(output_type)
 
         # Find a sequence of morphs that takes us from the input medium
         # to the output type.
@@ -231,6 +247,10 @@ class Forge:
         return _reshape_func
 
     def convert(self, input_medium: Medium, output_medium: Medium) -> None:
+        # On-demand registration of morphers for the arguments
+        self._register_on_demand(input_medium)
+        self._register_on_demand(output_medium)
+
         # Find a sequence of morphs that takes us from the input medium
         # to the output type.
         morphs = tuple(self._morphers.get_morphs(input_medium.spec, output_medium.spec))
@@ -253,6 +273,10 @@ class Forge:
             last_morph(result, output_medium.raw)
 
     def serialize(self, input_data: Any, output_medium: Medium) -> None:
+        # On-demand registration of morphers for the arguments
+        self._register_on_demand(input_data)
+        self._register_on_demand(output_medium)
+
         # Find a sequence of morphs that takes us from the input medium
         # to the output type.
         morphs = tuple(self._morphers.get_morphs(type(input_data), output_medium.spec))
@@ -300,25 +324,34 @@ class Forge:
         # We don't change the function itself, we simply register it.
         return func
 
-    def _register_on_demand(self, type_: type) -> None:
-        """Register additional morphers based on the given type.
+    def _register_on_demand(self, shape: Shape) -> None:
+        """Register additional morphers based on the given shape.
 
         This way, you don't have to `import` all dependencies up front. In turn,
         it allows `Forge` itself to stay light on dependencies. Want more functionality?
         simply add it on top via `register_on_demand` (plug-in style).
         """
-        type_repr = repr(type_)
+        if isinstance(shape, Medium | MediumSpec):
+            shape_repr = shape.media_type
+        elif isinstance(shape, type):
+            shape_repr = repr(shape)
+        else:
+            shape_repr = repr(type(shape))
+
         try:
             # We use `pop` so that we avoid multiple calls to the registration
-            # function. Note that this does *not* forego the idempotence
-            # requirement of the registration function (at least not for now).
-            # It is merely a performance improvement (avoiding an unncessary
-            # function call).
-            register_func = self._on_demand_registration_funcs.pop(type_repr)
+            # function. It is merely a performance improvement (avoiding an
+            # unncessary function call) for subsequent calls.
+            #
+            # Do note, however, that the same function may be called for
+            # different shape_repr. Therefore `pop` alone is not enough. This
+            # is why we wrap the register_func in `run_once` inside
+            # `register_on_demand`.
+            register_func = self._on_demand_registration_funcs.pop(shape_repr)
         except KeyError:
             pass
         else:
-            register_func(self)
+            register_func()
 
 
 def _maybe_enter(stack: ExitStack, obj: Any) -> Any:

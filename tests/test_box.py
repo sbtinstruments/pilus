@@ -5,7 +5,7 @@ from immutables import Map
 from pyfakefs.fake_filesystem import FakeFilesystem
 
 from pilus._magic import Medium
-from pilus.formats import box
+from pilus.basic import box_from_dir
 
 
 def test_store_raw_data(fs: FakeFilesystem) -> None:
@@ -21,7 +21,7 @@ def test_store_raw_data(fs: FakeFilesystem) -> None:
         """,
     )
     fs.create_file("project.box/data/my_numbers.json", contents="[1, 2, 3, 4]")
-    project = box.from_dir(
+    project = box_from_dir(
         Path("project.box"),
         mode="store-raw-data",
     )
@@ -46,7 +46,7 @@ def test_store_reference_to_data(fs: FakeFilesystem) -> None:
         """,
     )
     fs.create_file("project.box/data/my_numbers.json", contents="[1, 2, 3, 4]")
-    project = box.from_dir(
+    project = box_from_dir(
         Path("project.box"),
         mode="store-reference-to-data",
     )

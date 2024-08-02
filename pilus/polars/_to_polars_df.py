@@ -3,10 +3,14 @@ from datetime import UTC, datetime
 import numpy as np
 import polars as pl
 
-from pilus.basic import BdrAggregate, Wave
+from pilus.basic import Wave
+from pilus.sbt import BdrAggregate
 from pilus.snipdb import SnipDb, SnipRow
 
+from ..forge import FORGE
 
+
+@FORGE.register_transformer
 def iqs_snipdb_polars_df(iqs: SnipDb) -> pl.DataFrame:
     # Data: Column name to series mapping
     data: dict[str, np.ndarray] = {}
@@ -57,6 +61,7 @@ def iqs_snipdb_polars_df(iqs: SnipDb) -> pl.DataFrame:
     return result.with_columns(time=time.head(len(result)))
 
 
+@FORGE.register_transformer
 def bdr_aggregate_to_polars_df(bdr: BdrAggregate) -> pl.DataFrame:
     sites = iter(bdr.sites.values())
     first_site = next(sites)

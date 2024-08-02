@@ -4,7 +4,7 @@ import numpy as np
 import polars as pl
 
 from pilus.basic import Lpcm, Wave, WaveMeta
-from pilus.forge import FORGE, Morpher
+from pilus.forge import FORGE
 from pilus.snipdb import (
     SnipAttrDecl,
     SnipAttrDeclMap,
@@ -19,6 +19,13 @@ from pilus.snipdb import (
 _BYTE_DEPTH = 4
 # NOTE: value fixed by sbt_lock_amp
 _MAX_AMPLITUDE = 1784331945
+
+
+@FORGE.register_transformer
+def from_polars_df_to_iqs_snipdb(iqs: pl.DataFrame) -> SnipDb:
+    attr_decls = _from_polar_df_to_attr_decls(iqs)
+    snip_rows = _from_polar_df_to_snip_rows(iqs, attr_decls)
+    return SnipDb(snip_rows, attr_decls)
 
 
 def _from_polar_df_to_attr_decls(iqs: pl.DataFrame) -> SnipAttrDeclMap:
@@ -67,18 +74,3 @@ def _from_polar_df_to_snip_rows(
         )
         metadata = SnipRowMetadata(name=name, attributes=attributes)
         yield SnipRow(content=wave, metadata=metadata)
-
-
-def from_polars_df_to_iqs_snipdb(iqs: pl.DataFrame) -> Iterable[SnipRow[Wave]]:
-    attr_decls = _from_polar_df_to_attr_decls(iqs)
-    snip_rows = _from_polar_df_to_snip_rows(iqs, attr_decls)
-    return SnipDb(snip_rows, attr_decls)
-
-
-FORGE.add_morpher(
-    Morpher(
-        input=pl.DataFrame,
-        output=SnipDb,
-        func=from_polars_df_to_iqs_snipdb,
-    )
-)

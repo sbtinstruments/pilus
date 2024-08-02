@@ -5,7 +5,8 @@ from pyfakefs.fake_filesystem import FakeFilesystem
 from tinydb import where
 
 from pilus._magic import Medium
-from pilus.basic import Extrema, Extremum, ExtremumType, Lpcm, Wave, WaveMeta
+from pilus.basic import Lpcm, Wave, WaveMeta
+from pilus.sbt import Extrema, Extremum, ExtremumType
 from pilus.snipdb import SnipDb, SnipRow
 
 from ._assets import ASSETS_DIR

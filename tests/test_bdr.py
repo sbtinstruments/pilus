@@ -3,8 +3,8 @@ from pathlib import Path
 from pyfakefs.fake_filesystem import FakeFilesystem
 
 from pilus._magic import Medium
-from pilus.basic import BdrAggregate
 from pilus.forge import FORGE
+from pilus.sbt import BdrAggregate
 
 from ._assets import ASSETS_DIR
 

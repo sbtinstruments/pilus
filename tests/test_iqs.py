@@ -3,8 +3,8 @@ from pathlib import Path
 
 from pyfakefs.fake_filesystem import FakeFilesystem
 
-from pilus.basic import IqsAggregate
-from pilus.formats import iqs
+from pilus.sbt import IqsAggregate
+from pilus.sbt._format import iqs
 
 from ._assets import ASSETS_DIR
 

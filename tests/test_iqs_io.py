@@ -4,9 +4,8 @@ import polars as pl
 from pyfakefs.fake_filesystem import FakeFilesystem
 
 from pilus._magic import Medium
-from pilus.basic import Wave
+from pilus.basic import Wave, lpcm_to_io
 from pilus.forge import FORGE
-from pilus.formats import wave as wav_format
 from pilus.snipdb import SnipDb
 
 from ._assets import ASSETS_DIR
@@ -27,7 +26,7 @@ def test_iqs_to_snipdb(fs: FakeFilesystem) -> None:
 
     wave_file = Path("data.wav")
     with wave_file.open("wb") as io:
-        wav_format.to_io(wave.lpcm, io)
+        lpcm_to_io(wave.lpcm, io)
 
 
 def test_iqs_to_polars(fs: FakeFilesystem) -> None:

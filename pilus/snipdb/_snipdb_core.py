@@ -12,7 +12,6 @@ from typing import (
 from tinydb import TinyDB, where
 from tinydb.queries import Query, QueryInstance
 from tinydb.storages import MemoryStorage
-from tinydb.table import Document
 from typeguard import check_type
 
 from ..errors import (

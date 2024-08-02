@@ -10,9 +10,10 @@ from ._snip_attributes import (
     SnipStrDecl,
 )
 from ._snip_row import SnipRow
-from ._snipdb import SnipDb
 from ._snip_row_metadata import (
     SnipAttributeMap,
     SnipRowMetadata,
     create_attribute_map,
 )
+from ._snipdb import SnipDb
+from ._transform import box_to_snipdb

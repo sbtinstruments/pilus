@@ -881,9 +881,9 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 
 [extras]
 cli = ["typer"]
-polars = ["polars", "timezones"]
+polars = ["polars"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<4.0"
-content-hash = "654b936bb1b33894e7a2f764260d80149adcea3cea0e001dc468526b8ed28097"
+content-hash = "b69a51d33330f99040c2e3efcc26a5b6a95b964b6f60606857d78e9f874ebcd8"

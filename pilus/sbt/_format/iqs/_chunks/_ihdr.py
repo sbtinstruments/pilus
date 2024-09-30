@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, BinaryIO, ClassVar
+import dataclasses
+from typing import TYPE_CHECKING, Any, BinaryIO, ClassVar, Literal, Self
 
 from ...._model import IqsChannelHeader
 from ..._io import read_int, read_terminated_string, write_int, write_terminated_string
@@ -8,7 +9,7 @@ from ..._io import read_int, read_terminated_string, write_int, write_terminated
 if TYPE_CHECKING:
     from ._shdr import ShdrChunk
 
-
+MaxAmplitudeMode = Literal["from-header-as-is", "from-header-with-corrections"]
 SiteHeader = dict[str, IqsChannelHeader]
 
 
@@ -81,3 +82,29 @@ class IhdrChunk(dict[str, SiteHeader]):
         # Channel names, length
         result += sum(4 + len(site) * (256 + 4 + 1 + 64) for site in self.values())
         return result
+
+    def with_corrections(self, *, max_amplitude_mode: MaxAmplitudeMode) -> IhdrChunk:
+        """Apply corrections to known issues in IQS I/O."""
+        match max_amplitude_mode:
+            case "from-header-as-is":
+                return self
+            case "from-header-with-corrections":
+                # Modify in place (mutate instance)
+                new_sites: dict[str, SiteHeader] = {}
+                for site_name, site_header in self.items():
+                    new_site_header: SiteHeader = {}
+                    for channel_name, channel_header in site_header.items():
+                        # Due to a rounding error, the IQS serializer in
+                        # baxter returns the wrong `max_amplitude` value.
+                        # Luckily, it's easy to detect since the value
+                        # is always the same.
+                        if channel_header.max_amplitude == 178433194:
+                            channel_header = dataclasses.replace(
+                                channel_header,
+                                max_amplitude=channel_header.max_amplitude + 1,
+                            )
+                        new_site_header[channel_name] = channel_header
+                    new_sites[site_name] = new_site_header
+                return IhdrChunk(new_sites)
+            case other:
+                raise ValueError(f"Unknown max_amplitude_mode '{other}'")

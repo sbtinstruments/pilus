@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Annotated, BinaryIO, Optional, Union, cast, get_args
+from typing import Annotated, BinaryIO, Literal, Optional, Union, cast, get_args
 
 from ...._magic.signatures import IQS_SIGNATURE
 from ....errors import PilusDeserializeError
@@ -7,7 +7,15 @@ from ....forge import FORGE
 from ..._model import IqsAggregate, IqsAggregateChannel, IqsAggregateSite
 from .._chunk import require_single_chunk, stream_chunks
 from .._io import read_and_validate_signature
-from ._chunks import DataChunk, HeaderChunk, IdatChunk, IhdrChunk, SdatChunk, ShdrChunk
+from ._chunks import (
+    DataChunk,
+    HeaderChunk,
+    IdatChunk,
+    IhdrChunk,
+    MaxAmplitudeMode,
+    SdatChunk,
+    ShdrChunk,
+)
 
 
 @FORGE.register_deserializer
@@ -16,6 +24,7 @@ def from_io(
     *,
     version_1_0_0_site_name: Optional[str] = None,
     contiguous_tolerance: Optional[timedelta] = None,
+    max_amplitude_mode: MaxAmplitudeMode | None = None,
 ) -> IqsAggregate:
     """Deserialize IO stream into an IQS aggregate.
 
@@ -30,6 +39,8 @@ def from_io(
     # Default arguments
     if version_1_0_0_site_name is None:
         version_1_0_0_site_name = "site0"
+    if max_amplitude_mode is None:
+        max_amplitude_mode = "from-header-with-corrections"
     # Signature
     read_and_validate_signature(io, IQS_SIGNATURE)
     # Read header (it must come first).
@@ -49,6 +60,8 @@ def from_io(
         raise PilusDeserializeError("No data chunks.")
     # Convert everything to the version 2.0.0 chunk types (IHDR and IDAT)
     ihdr = _ensure_ihdr(header, site_name=version_1_0_0_site_name)
+    # Corrections due to, e.g., rounding issues during serilization
+    ihdr = ihdr.with_corrections(max_amplitude_mode=max_amplitude_mode)
     idats = (
         _ensure_idat(chunk, site_name=version_1_0_0_site_name, header=header)
         for chunk in data

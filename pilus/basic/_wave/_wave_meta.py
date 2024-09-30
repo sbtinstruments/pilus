@@ -1,4 +1,4 @@
-from datetime import datetime
+from pydantic import AwareDatetime, PositiveInt
 
 from ...forge import FORGE
 from ...model import FrozenModel
@@ -8,5 +8,5 @@ from ...model import FrozenModel
 class WaveMeta(FrozenModel):
     """Metadata for a wave (LPCM signal)."""
 
-    start_time: datetime
-    max_amplitude: int
+    start_time: AwareDatetime
+    max_amplitude: PositiveInt

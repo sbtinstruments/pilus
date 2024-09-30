@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, BinaryIO, ClassVar
 
 from .....errors import PilusDeserializeError
@@ -75,7 +75,7 @@ class SdatChunk:
         data_length = kwargs["data_length"]
         assert isinstance(data_length, int)
         timestamp_us = read_int(io, 8)
-        start_time = datetime.fromtimestamp(timestamp_us * 1e-6)
+        start_time = datetime.fromtimestamp(timestamp_us * 1e-6, tz=UTC)
         interleaved_data = read_exactly(io, data_length - 8)
         return cls(start_time, interleaved_data)
 

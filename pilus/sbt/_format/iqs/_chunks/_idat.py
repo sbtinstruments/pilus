@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any, BinaryIO, ClassVar, Optional
 
 from .....errors import PilusDeserializeError
@@ -206,7 +206,7 @@ class IdatChunk:
                 site_data[channel_name] = channel_data
             # Add site header to chunk
             idat_value[site_name] = site_data
-        start_time = datetime.fromtimestamp(timestamp_us * 1e-6)
+        start_time = datetime.fromtimestamp(timestamp_us * 1e-6, tz=UTC)
         return IdatChunk(start_time, duration_ns, idat_value)
 
     def to_io(self, io: BinaryIO) -> None:

@@ -64,8 +64,7 @@ def _from_polar_df_to_snip_rows(
         site, channel, part = name.split("-")
         array_bytes = np.array(array * _MAX_AMPLITUDE, np.int32).tobytes()
         lpcm = Lpcm(_BYTE_DEPTH, time_step_ns, array_bytes)
-        wave_metadata = WaveMeta(
-            start_time=time[0], max_amplitude=_MAX_AMPLITUDE)
+        wave_metadata = WaveMeta(start_time=time[0], max_amplitude=_MAX_AMPLITUDE)
         wave = Wave(lpcm, wave_metadata)
         attributes = create_attribute_map(
             attr_decls,

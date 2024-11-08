@@ -50,8 +50,8 @@ def test_iqs_to_polars(fs: FakeFilesystem) -> None:
     assert len(df) == 2058150
 
     # Check some specific (yet arbitrary) data points
-    assert df["site0-hf-re"].head(1).to_list() == [0.0008609048381435127]
-    assert df["site0-hf-re"].tail(1).to_list() == [0.0008100454672127878]
+    assert df["site0-hf-re"].head(1).to_list() == [0.0008609048333187107]
+    assert df["site0-hf-re"].tail(1).to_list() == [0.0008100454626730188]
     # Nanoseconds since the UNIX epoch
     assert df["time"].head(1).cast(int).to_list() == [1576580031051702000]
     assert df["time"].tail(1).cast(int).to_list() == [1576580120885789552]

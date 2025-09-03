@@ -11,24 +11,15 @@ Pilus is your one-stop toolbox for SBT data files (IQS, BDR, etc.).
 You can use the CLI:
 
 ```shell
-pilus convert measure-bb2221028-A02.bdr measure-bb2221028-A02.csv
-```
-
-If you're not within a Poetry shell, prefix `poetry run` to the command:
-
-```shell
-poetry run pilus convert measure-bb2221028-A02.bdr measure-bb2221028-A02.csv
+uv run pilus convert measure-bb2221028-A02.bdr measure-bb2221028-A02.csv
 ```
 
 ## Install
 
-We use [`poetry`](https://python-poetry.org) to manage dependencies.
-Moreover, we use `poetry` version 1.2.x for it's dependency group feature.
-As of this writing, `poetry` offers version 1.2.x through it's "preview" channel.
-[Install "preview" version of `poetry`](https://python-poetry.org/docs/master/#installation):
+We use [`uv`](https://docs.astral.sh/uv/) to manage dependencies. Install `uv` with:
 
 ```shell
-curl -sSL https://install.python-poetry.org | python3 - --preview
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
 Follow `poetry`'s installation instructions.

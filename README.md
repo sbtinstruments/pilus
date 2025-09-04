@@ -22,20 +22,17 @@ We use [`uv`](https://docs.astral.sh/uv/) to manage dependencies. Install `uv` w
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-Follow `poetry`'s installation instructions.
-Make sure that `poetry` is available on the current path.
+Follow `uv`'s installation instructions.
+Make sure that `uv` is available on the current path.
 E.g., with `export PATH=$PATH:$HOME/.local/bin`.
 
-With `poetry` installed, we can install all of Pilus' dependencies:
+With `uv` installed, we install all of Pilus' dependencies:
 
 ```shell
-poetry install --with analysis,cli
+uv sync --all-extras
 ```
 
 That's it.
-Note that we use `--with analysis,cli`.
-The `analysis` group of tools allows you to, e.g., convert SBT data types to numpy arrays.
-The `cli` group of tools gives you the `pilus` command in your shell.
 
 ## Test
 
@@ -48,5 +45,5 @@ git submodule update --init
 Run all tests:
 
 ```shell
-poetry run pytest
+uv run pytest
 ```

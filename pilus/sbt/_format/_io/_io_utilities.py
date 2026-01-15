@@ -180,7 +180,7 @@ def write_terminated_string(
     seek(io, remainder, SEEK_CUR)
 
 
-def write_exactly(io: BinaryIO, data: bytes) -> None:
+def write_exactly(io: BinaryIO, data: bytes | memoryview) -> None:
     """Write binary data to the IO stream.
 
     May raise:

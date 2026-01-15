@@ -1,6 +1,6 @@
 from collections.abc import Callable
 
-crc32: Callable[[bytes, int], int]
+crc32: Callable[[bytes | memoryview, int], int]
 
 # Python contains two crc32 implementations:
 #

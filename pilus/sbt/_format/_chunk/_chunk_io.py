@@ -203,7 +203,7 @@ def _reserve(io: BinaryIO, size: int) -> None:
     seek(io, -size, SEEK_CUR)
 
 
-def _chunk_crc(chunk_type: bytes, chunk_data: bytes) -> int:
+def _chunk_crc(chunk_type: bytes, chunk_data: bytes | memoryview) -> int:
     crc = 0xFFFFFFFF
     crc = crc32(chunk_type, crc)
     return crc32(chunk_data, crc)

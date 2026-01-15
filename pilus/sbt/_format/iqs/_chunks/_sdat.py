@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, BinaryIO, ClassVar
+from typing import TYPE_CHECKING, Any, BinaryIO, ClassVar, Literal
 
 from .....errors import PilusDeserializeError
 from ..._io import read_exactly, read_int, write_exactly, write_int
@@ -41,7 +41,7 @@ class SdatChunk:
             raise PilusDeserializeError("Couldn't find the HF and LF channels") from exc
         # Interleave channels
         buffer = bytearray(len(hf_channel.re) * 4)  # 4 channels
-        format_string = "i"  # 4-byte integer
+        format_string: Literal["i"] = "i"  # 4-byte integer
         interleaved = memoryview(buffer).cast(format_string)
         if interleaved.itemsize != 4:
             raise RuntimeError("The native integer size must be 4 bytes")

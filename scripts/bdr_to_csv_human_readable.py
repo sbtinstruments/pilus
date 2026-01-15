@@ -20,8 +20,8 @@ def process_file(file: Path) -> None:
         logger.warning("Reason: %s", exc)
         return
 
-    output = {
-        "site": [],
+    output_site: list[str] = []
+    output_metrics: dict[str, list[float]] = {
         "lf_amplitude": [],
         "hf_amplitude": [],
         "lf_amplitude_dB": [],
@@ -33,25 +33,29 @@ def process_file(file: Path) -> None:
         for name, bdr_channel in bdr_channels.items():
             for fit in bdr_channel.transition_fits:
                 if name == "lf":
-                    output["site"].append(site)
-                output[name + "_amplitude"].append(
+                    output_site.append(site)
+                output_metrics[name + "_amplitude"].append(
                     sqrt(fit.re.scale**2 + fit.im.scale**2)
                 )
-                output[name + "_amplitude_dB"].append(
+                output_metrics[name + "_amplitude_dB"].append(
                     20 * log10(sqrt(fit.re.scale**2 + fit.im.scale**2))
                 )
-                output[name + "_phase_rad"].append(atan2(fit.im.scale, fit.re.scale))
+                output_metrics[name + "_phase_rad"].append(
+                    atan2(fit.im.scale, fit.re.scale)
+                )
 
     output_file = file.parent / (file.stem + ".csv")
     with output_file.open("w", newline="", encoding="utf-8") as output_handle:
-        writer = csv.DictWriter(output_handle, fieldnames=output.keys())
+        fieldnames = ["site", *output_metrics.keys()]
+        writer = csv.DictWriter(output_handle, fieldnames=fieldnames)
 
         # Write header
         writer.writeheader()
 
         # Write data
-        for i in range(len(output["site"])):
-            row = {key: value[i] for key, value in output.items()}
+        for i in range(len(output_site)):
+            row: dict[str, float | str] = {"site": output_site[i]}
+            row.update({key: value[i] for key, value in output_metrics.items()})
             writer.writerow(row)
 
 

@@ -14,7 +14,7 @@ from typing import (
     get_type_hints,
 )
 
-from networkx.classes.reportviews import EdgeView, NodeView
+from networkx.classes.reportviews import NodeView, OutEdgeView
 from pydantic import BaseModel
 
 from .._magic import Medium, MediumSpec, RawMediumType
@@ -179,10 +179,10 @@ class Forge:
     def spec_to_type(self, spec: ShapeSpec) -> type:
         return self._morphers.spec_to_type(spec)
 
-    def morph_graph_nodes(self) -> NodeView:
+    def morph_graph_nodes(self) -> NodeView[ShapeSpec]:
         return self._morphers.nodes()
 
-    def morph_graph_edges(self) -> EdgeView:
+    def morph_graph_edges(self) -> OutEdgeView[ShapeSpec]:
         return self._morphers.edges()
 
     def get_combiners(

@@ -2,6 +2,7 @@ from datetime import UTC, datetime
 
 import numpy as np
 import polars as pl
+from numpy.typing import NDArray
 
 from pilus.basic import Wave
 from pilus.sbt import BdrAggregate
@@ -122,14 +123,16 @@ def bdr_aggregate_to_polars_df(bdr: BdrAggregate) -> pl.DataFrame:
     return pl.DataFrame({"time": time, **data})
 
 
-def _fit_model_array(ts: np.ndarray, *, fit: TransitionFit) -> np.ndarray:
+def _fit_model_array(ts: np.ndarray, *, fit: TransitionFit) -> NDArray[np.float64]:
     transition = _gauss_array(fit.center - fit.offset, ts, fit=fit) - _gauss_array(
         fit.center + fit.offset, ts, fit=fit
     )
     return transition + fit.baseline
 
 
-def _gauss_array(center: float, ts: np.ndarray, *, fit: TransitionFit) -> np.ndarray:
+def _gauss_array(
+    center: float, ts: np.ndarray, *, fit: TransitionFit
+) -> NDArray[np.float64]:
     return fit.scale * np.exp(
         -(ts - center) * (ts - center) / (2.0 * fit.width * fit.width)
     )

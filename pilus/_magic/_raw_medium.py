@@ -7,8 +7,8 @@ from typing import Any, BinaryIO, get_args
 # `PathLike` is anyting with an `__fspath__` method (which `str` doesn't have).
 # Indirectly, we force the user to be explicit and use, e.g., `Path` instances
 # for file system paths (and avoid raw strings)
-RawMedium = PathLike | BinaryIO | bytes
-RawMediumType = type[PathLike] | type[BinaryIO] | type[bytes]
+type RawMedium = PathLike[str] | BinaryIO | bytes
+type RawMediumType = type[PathLike[str] | BinaryIO | bytes]
 
 
 def is_raw_medium(value: Any) -> bool:

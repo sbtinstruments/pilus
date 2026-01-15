@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING, Any, BinaryIO, ClassVar
+from typing import TYPE_CHECKING, Any, BinaryIO, ClassVar, Literal
 
 from .....errors import PilusDeserializeError
 from ...._model import IqsChannelData
@@ -159,7 +159,7 @@ class IdatChunk:
           * `RuntimeError` if the platform doesn't natively support 4-byte integers.
         """
         # We de-interleave the data first
-        format_string = "i"  # 4-byte integer
+        format_string: Literal["i"] = "i"  # 4-byte integer
         interleaved = memoryview(sdat.interleaved_data).cast(format_string)
         if interleaved.itemsize != 4:
             raise RuntimeError("The native integer size must be 4 bytes")

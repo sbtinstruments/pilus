@@ -3,10 +3,10 @@ from contextlib import contextmanager, suppress
 from itertools import pairwise
 from os import PathLike
 from pathlib import Path
-from typing import Any, BinaryIO, cast, get_origin
+from typing import Any, BinaryIO, get_origin
 
 import networkx as nx
-from networkx.classes.reportviews import EdgeView, NodeView
+from networkx.classes.reportviews import NodeView, OutEdgeView
 
 from .._magic import MediumSpec
 from ..errors import PilusMissingMorpherError
@@ -19,7 +19,7 @@ class MorphGraph:
     def __init__(self) -> None:
         # Nodes are of type: `ShapeSpec`
         # Edges are of type: `MorphFunc`
-        self._graph = nx.DiGraph()
+        self._graph: nx.DiGraph[ShapeSpec] = nx.DiGraph()
 
     def add_morpher(self, morpher: Morpher) -> None:
         """Add nodes and edge that corresponds the given morpher to this graph.
@@ -35,10 +35,10 @@ class MorphGraph:
         if isinstance(morpher.input, MediumSpec):
             self._generate_edges_to_medium_spec(morpher.input)
 
-    def nodes(self) -> NodeView:
+    def nodes(self) -> NodeView[ShapeSpec]:
         return self._graph.nodes
 
-    def edges(self) -> EdgeView:
+    def edges(self) -> OutEdgeView[ShapeSpec]:
         return self._graph.edges
 
     def _generate_edges_to_medium_spec(self, spec: MediumSpec) -> None:
@@ -104,7 +104,7 @@ class MorphGraph:
                     assert isinstance(target_node, type) or isinstance(
                         get_origin(target_node), type
                     )
-                    return cast(type, target_node)
+                    return target_node
         except KeyError:
             pass
         raise ValueError(

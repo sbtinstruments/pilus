@@ -22,7 +22,7 @@ _RootType = dict[str, SnipAttrDecl]
 
 
 @FORGE.register_model("application/vnd.sbt.snip.attributes+json")
-class SnipAttrDeclMap(RootModel, frozen=True):
+class SnipAttrDeclMap(RootModel[_RootType], frozen=True):
     """Attribute declarations for snip."""
 
     root: _RootType = {}

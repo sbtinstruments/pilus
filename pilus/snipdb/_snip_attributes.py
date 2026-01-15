@@ -5,7 +5,7 @@ from typing import Any, ClassVar, Literal, Self, TypeVar
 
 from pydantic import Field, ValidationInfo, field_validator
 
-from ..model import FrozenModel
+from cyto.model import FrozenModel
 
 
 @unique

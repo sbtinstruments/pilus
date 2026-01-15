@@ -5,7 +5,7 @@ from pathlib import Path
 from pydantic import Field
 
 from ...forge import FORGE
-from ...model import FrozenModel
+from cyto.model import FrozenModel
 
 
 @FORGE.register_model("application/vnd.sbt.box.manifest+json")

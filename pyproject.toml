@@ -12,6 +12,7 @@ authors = [
 ]
 requires-python = ">=3.10,<4.0"
 dependencies = [
+    "cyto[model]",
     "immutables>=0.20,<1",
     "pydantic>=2.9.2,<3",
     "tinydb>=4.4.0,<5",

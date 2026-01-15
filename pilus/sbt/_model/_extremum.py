@@ -5,7 +5,7 @@ from pydantic import TypeAdapter
 
 from ..._magic import MediumSpec
 from ...forge import FORGE, Morpher
-from ...model import FrozenModel
+from cyto.model import FrozenModel
 
 
 @unique

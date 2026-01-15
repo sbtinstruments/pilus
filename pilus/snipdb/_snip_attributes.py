@@ -3,9 +3,8 @@ from __future__ import annotations
 from enum import Enum, unique
 from typing import Any, ClassVar, Literal, Self, TypeVar
 
-from pydantic import Field, ValidationInfo, field_validator
-
 from cyto.model import FrozenModel
+from pydantic import Field, ValidationInfo, field_validator
 
 
 @unique
@@ -33,7 +32,7 @@ class SnipDeclBase(FrozenModel):
     @classmethod
     def from_args(cls, **kwargs: Any) -> Self:
         """Return instance with the `type_` field filled out for convenience."""
-        return cls(type=cls.declaration_type, **kwargs)
+        return cls.model_validate({"type": cls.declaration_type, **kwargs})
 
 
 class SnipIntDecl(SnipDeclBase):

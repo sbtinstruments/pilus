@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from cyto.model import FrozenModel
 from pydantic import Field
 
 from ...forge import FORGE
-from cyto.model import FrozenModel
 
 
 @FORGE.register_model("application/vnd.sbt.box.manifest+json")

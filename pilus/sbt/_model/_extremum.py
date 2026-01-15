@@ -1,11 +1,11 @@
 from datetime import datetime
 from enum import Enum, unique
 
+from cyto.model import FrozenModel
 from pydantic import TypeAdapter
 
 from ..._magic import MediumSpec
 from ...forge import FORGE, Morpher
-from cyto.model import FrozenModel
 
 
 @unique

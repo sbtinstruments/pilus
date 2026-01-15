@@ -1,7 +1,7 @@
+from cyto.model import FrozenModel
 from pydantic import AwareDatetime, PositiveInt
 
 from ...forge import FORGE
-from cyto.model import FrozenModel
 
 
 @FORGE.register_model("application/vnd.sbt.wave-meta+json")

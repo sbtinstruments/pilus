@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from io import SEEK_CUR, BytesIO
-from typing import Any, BinaryIO, Iterable, Optional, Type, Union
+from typing import Any, BinaryIO
 
 from ....errors import PilusDeserializeError, PilusMissingDataError, PilusSerializeError
 from .._io import read_exactly, read_int, seek, write_exactly, write_int
@@ -23,7 +24,7 @@ from ._crc import crc32
 
 
 def require_single_chunk(
-    io: BinaryIO, *, chunk_models: tuple[Type[ReadableChunk], ...], **kwargs: Any
+    io: BinaryIO, *, chunk_models: tuple[type[ReadableChunk], ...], **kwargs: Any
 ) -> ReadableChunk:
     """Return the first chunk of the required type.
 
@@ -37,7 +38,7 @@ def require_single_chunk(
 
 
 def stream_chunks(
-    io: BinaryIO, *, chunk_models: tuple[Type[ReadableChunk], ...], **kwargs: Any
+    io: BinaryIO, *, chunk_models: tuple[type[ReadableChunk], ...], **kwargs: Any
 ) -> Iterable[ReadableChunk]:
     """Return stream of chunks.
 
@@ -53,8 +54,8 @@ def stream_chunks(
 
 
 def read_chunk(
-    io: BinaryIO, *, chunk_models: tuple[Type[ReadableChunk], ...], **kwargs: Any
-) -> Union[Optional[ReadableChunk], UnidentifiedAncilliaryChunk]:
+    io: BinaryIO, *, chunk_models: tuple[type[ReadableChunk], ...], **kwargs: Any
+) -> ReadableChunk | None | UnidentifiedAncilliaryChunk:
     """Read single chunk.
 
     This is a low-level function. Prefer `stream_chunks` or similar.
@@ -86,8 +87,8 @@ def read_chunk(
 
 
 def _chunk_type_to_model(
-    chunk_type: bytes, *, chunk_models: tuple[Type[ReadableChunk], ...]
-) -> Union[Type[ReadableChunk], UnidentifiedAncilliaryChunk]:
+    chunk_type: bytes, *, chunk_models: tuple[type[ReadableChunk], ...]
+) -> type[ReadableChunk] | UnidentifiedAncilliaryChunk:
     try:
         return next(model for model in chunk_models if model.type_ == chunk_type)
     except StopIteration as exc:
@@ -115,7 +116,7 @@ def _chunk_type_to_string(chunk_type: bytes) -> str:
         raise PilusDeserializeError("Invalid chunk type") from exc
 
 
-def _read_chunk_length(io: BinaryIO) -> Optional[int]:
+def _read_chunk_length(io: BinaryIO) -> int | None:
     """Read chunk length.
 
     May raise `IqsError` or one of its derivatives.
@@ -131,7 +132,7 @@ def _read_chunk_length(io: BinaryIO) -> Optional[int]:
 
 
 def _deserialize_chunk_data(
-    chunk_model: Type[ReadableChunk],
+    chunk_model: type[ReadableChunk],
     chunk_data: bytes,
     **kwargs: Any,
 ) -> ReadableChunk:

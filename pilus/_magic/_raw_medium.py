@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from os import PathLike
-from typing import Any, BinaryIO, Type, Union, get_args
+from typing import Any, BinaryIO, Union, get_args
 
 # Note that `PathLike` only covers classes like `pathlib.Path` and not `str`.
 # `PathLike` is anyting with an `__fspath__` method (which `str` doesn't have).
 # Indirectly, we force the user to be explicit and use, e.g., `Path` instances
 # for file system paths (and avoid raw strings)
 RawMedium = Union[PathLike, BinaryIO, bytes]
-RawMediumType = Union[Type[PathLike], Type[BinaryIO], Type[bytes]]
+RawMediumType = Union[type[PathLike], type[BinaryIO], type[bytes]]
 
 
 def is_raw_medium(value: Any) -> bool:

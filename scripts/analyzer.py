@@ -1,6 +1,7 @@
-import os
 import json
+import os
 import re
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -15,7 +16,7 @@ def fill_data(p, theory_conc, measured_conc, flow_rate, extrema):
                 measured_conc.append(
                     data["analysis"]["concentration"]["sampleVolume"]["nonbacteria"]
                 )
-                x0 = re.findall("2.m[_|\s]([\d|,]+e\d).*", file)
+                x0 = re.findall(r"2.m[_|\s]([\d|,]+e\d).*", file)
                 x1 = re.sub(",", ".", x0[0])
                 theory_conc.append(float(x1))
                 flow_rate.append(float(data["analysis"]["flowRate"]))

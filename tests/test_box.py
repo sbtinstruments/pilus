@@ -2,10 +2,9 @@ import json
 from pathlib import Path
 
 from immutables import Map
-from pyfakefs.fake_filesystem import FakeFilesystem
-
 from pilus._magic import Medium
 from pilus.basic import box_from_dir
+from pyfakefs.fake_filesystem import FakeFilesystem
 
 
 def test_store_raw_data(fs: FakeFilesystem) -> None:

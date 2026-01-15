@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 from typer import Option
 
@@ -11,8 +10,8 @@ def convert(
     input: Path,  # pylint: disable=redefined-builtin
     output: Path,
     *,
-    input_media_type: Optional[str] = Option(None),
-    output_media_type: Optional[str] = Option(None),
+    input_media_type: str | None = Option(None),
+    output_media_type: str | None = Option(None),
 ) -> None:
     """Convert input file to the given media type."""
     FORGE.convert(

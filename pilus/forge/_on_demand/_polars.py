@@ -14,4 +14,3 @@ def register_polars(forge: Forge) -> None:
         raise NotImplementedError
     # Indirectly, the following `import` registers all morphers in the
     # global `FORGE` instance.
-    from ... import polars

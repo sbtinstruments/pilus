@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import BinaryIO, Optional, Type, TypeVar
+from typing import BinaryIO, Self, TypeVar
 
 from .._magic import Medium
 from ._global_forge import FORGE
@@ -17,16 +17,16 @@ class ForgeIO:
 
     @classmethod
     def from_io(
-        cls: Type[Derived], io: BinaryIO, *, media_type: Optional[str] = None
-    ) -> Derived:
+        cls, io: BinaryIO, *, media_type: str | None = None
+    ) -> Self:
         """Deserialize IO stream into an instance of this class."""
         input_medium = Medium.from_raw(io, media_type=media_type)
         return FORGE.deserialize(input_medium, cls)
 
     @classmethod
     def from_file(
-        cls: Type[Derived], file: Path, *, media_type: Optional[str] = None
-    ) -> Derived:
+        cls, file: Path, *, media_type: str | None = None
+    ) -> Self:
         """Deserialize file into an instance of this class."""
         input_medium = Medium.from_raw(file, media_type=media_type)
         return FORGE.deserialize(input_medium, cls)

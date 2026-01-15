@@ -20,7 +20,7 @@ class ShdrChunk:
     max_amplitude: int
 
     @classmethod
-    def from_ihdr(cls, ihdr: "IhdrChunk", *, site_to_keep: str) -> ShdrChunk:
+    def from_ihdr(cls, ihdr: IhdrChunk, *, site_to_keep: str) -> ShdrChunk:
         """Convert the IHDR chunk into an SHDR chunk.
 
         May raise `PilusDeserializeError` or one of its derivatives.

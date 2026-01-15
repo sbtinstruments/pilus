@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from enum import Enum, unique
-from typing import Any, ClassVar, Literal, Type, TypeVar, Union
+from typing import Any, ClassVar, Literal, Self, TypeVar, Union
 
-from pydantic import Field, field_validator, ValidationInfo
+from pydantic import Field, ValidationInfo, field_validator
 
 from ..model import FrozenModel
 
@@ -31,7 +31,7 @@ class SnipDeclBase(FrozenModel):
     declaration_type: ClassVar[_SnipAttrType]
 
     @classmethod
-    def from_args(cls: Type[T], **kwargs: Any) -> T:
+    def from_args(cls, **kwargs: Any) -> Self:
         """Return instance with the `type_` field filled out for convenience."""
         return cls(type=cls.declaration_type, **kwargs)
 

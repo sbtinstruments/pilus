@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from os import PathLike
-from typing import BinaryIO, Optional
+from typing import BinaryIO
 
 from ._magic import detect_media_type
 from ._raw_medium import RawMedium, RawMediumType, is_binary_io_like
@@ -32,7 +32,7 @@ class Medium:
         cls,
         raw: RawMedium,
         *,
-        media_type: Optional[str] = None,
+        media_type: str | None = None,
     ) -> Medium:
         if media_type is None:
             media_type = detect_media_type(raw)

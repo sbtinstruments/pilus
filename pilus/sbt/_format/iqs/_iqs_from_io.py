@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Annotated, BinaryIO, Literal, Optional, Union, cast, get_args
+from typing import Annotated, BinaryIO, cast, get_args
 
 from ...._magic.signatures import IQS_SIGNATURE
 from ....errors import PilusDeserializeError
@@ -22,8 +22,8 @@ from ._chunks import (
 def from_io(
     io: Annotated[BinaryIO, "application/vnd.sbt.iqs"],
     *,
-    version_1_0_0_site_name: Optional[str] = None,
-    contiguous_tolerance: Optional[timedelta] = None,
+    version_1_0_0_site_name: str | None = None,
+    contiguous_tolerance: timedelta | None = None,
     max_amplitude_mode: MaxAmplitudeMode | None = None,
 ) -> IqsAggregate:
     """Deserialize IO stream into an IQS aggregate.
@@ -106,7 +106,7 @@ def _ensure_ihdr(header: HeaderChunk, *, site_name: str) -> IhdrChunk:
 
 
 def _ensure_idat(
-    chunk: Union[SdatChunk, IdatChunk], site_name: str, header: Optional[HeaderChunk]
+    chunk: SdatChunk | IdatChunk, site_name: str, header: HeaderChunk | None
 ) -> IdatChunk:
     # Early out if we already got an IDAT chunk
     if isinstance(chunk, IdatChunk):

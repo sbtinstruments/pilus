@@ -1,5 +1,6 @@
+from collections.abc import Iterator
 from dataclasses import astuple, fields
-from typing import Any, Iterator
+from typing import Any
 
 from ...basic import SimpleTable
 from ...forge import FORGE

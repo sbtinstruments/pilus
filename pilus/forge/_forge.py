@@ -1,15 +1,13 @@
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from contextlib import AbstractContextManager, ExitStack
-from functools import partial, wraps
+from functools import partial
 from itertools import chain
 from os import PathLike
 from pathlib import Path
 from typing import (
     Any,
     BinaryIO,
-    Callable,
     ParamSpec,
-    Type,
     TypeVar,
     cast,
     get_args,
@@ -177,14 +175,14 @@ class Forge:
     def add_morpher(self, morpher: Morpher) -> None:
         self._morphers.add_morpher(morpher)
 
-    def deserialize(self, input_medium: Medium, output_type: Type[T]) -> T:
+    def deserialize(self, input_medium: Medium, output_type: type[T]) -> T:
         """Deserialize the input medium into the output type.
 
         This is just a convenience method that delegates the real work to `reshape`.
         """
         return self.reshape(input_medium, output_type)
 
-    def transform(self, input_data: Any, output_type: Type[T]) -> T:
+    def transform(self, input_data: Any, output_type: type[T]) -> T:
         """Transform the input data into the output type.
 
         This is just a convenience method that delegates the real work to `reshape`.
@@ -297,7 +295,7 @@ class Forge:
             assert isinstance(last_morph, SerializeFunc)
             last_morph(result, output_medium.raw)
 
-    def register_model(self, media_type: str) -> Callable[[Type[M]], Type[M]]:
+    def register_model(self, media_type: str) -> Callable[[type[M]], type[M]]:
         """Associate the class with the given media type.
 
         This enables auto-generated serialization/deserialization methods on the class.
@@ -306,7 +304,7 @@ class Forge:
         if not media_type.endswith("+json"):
             raise ValueError('Only supports media types with the "+json" suffix')
 
-        def _decorator(cls: Type[M]) -> Type[M]:
+        def _decorator(cls: type[M]) -> type[M]:
             morpher = Morpher(
                 input=MediumSpec(raw_type=bytes, media_type=media_type),
                 output=cls,

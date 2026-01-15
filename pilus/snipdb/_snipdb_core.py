@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Iterable, Iterator
 from functools import reduce
 from typing import (
     Any,
-    Iterable,
-    Iterator,
     TypeVar,
 )
 

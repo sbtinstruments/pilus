@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, Any, BinaryIO, ClassVar, Literal, Self
+from typing import TYPE_CHECKING, Any, BinaryIO, ClassVar, Literal
 
 from ...._model import IqsChannelHeader
 from ..._io import read_int, read_terminated_string, write_int, write_terminated_string
@@ -19,7 +19,7 @@ class IhdrChunk(dict[str, SiteHeader]):
     type_: ClassVar[bytes] = b"IHDR"
 
     @classmethod
-    def from_shdr(cls, shdr: "ShdrChunk", *, site_name: str) -> IhdrChunk:
+    def from_shdr(cls, shdr: ShdrChunk, *, site_name: str) -> IhdrChunk:
         """Convert the SHDR chunk into an IHDR chunk.
 
         Doesn't raise any exceptions.

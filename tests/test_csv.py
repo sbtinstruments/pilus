@@ -1,11 +1,11 @@
 from pathlib import Path
 
-from pyfakefs.fake_filesystem import FakeFilesystem
-
+import pytest
 from pilus.basic import table_to_csv
 
 
-def test_csv(fs: FakeFilesystem) -> None:
+@pytest.mark.usefixtures("fs")
+def test_csv() -> None:
     table: list[list[str]] = [
         ["Eggs", "Spam"],
         ["2", "0"],

@@ -1,11 +1,8 @@
-from pandas.core import series
-import altair as alt
-import pandas as pd
-import numpy as np
-import scipy.stats as stats
 import os
 import re
 
+import altair as alt
+import pandas as pd
 
 alt.renderers.enable("altair_viewer")
 alt.data_transformers.disable_max_rows()

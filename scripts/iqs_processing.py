@@ -1,11 +1,10 @@
 import os
 import re
-from subprocess import Popen, PIPE
 from dataclasses import dataclass
-from typing import Optional
 from pathlib import Path
+from subprocess import PIPE, Popen
+
 from pilus.scripts.splitter import split_iqs_file
-import click
 
 
 @dataclass
@@ -14,8 +13,8 @@ class ProcessConfig:
 
     labqt_path: Path
     labqt_config: Path
-    site: Optional[int] = None
-    dest_dir: Optional[str] = None
+    site: int | None = None
+    dest_dir: str | None = None
     make_nested_dirs: bool = True
     delete_site_iqs: bool = False
 
@@ -37,7 +36,7 @@ def process_iqs_file(filename, config: ProcessConfig):
             site_dirs.append(dir_path)
             try:
                 os.mkdir(dir_path)
-            except FileExistsError as exc:
+            except FileExistsError:
                 pass
         else:
             site_dirs.append(dest_root)
@@ -85,7 +84,7 @@ def process_iqs_dir(root_dir: Path, config: ProcessConfig):
                         try:
                             print("Making " + new_dir_path)
                             os.makedirs(new_dir_path)
-                        except FileExistsError as exc:
+                        except FileExistsError:
                             print(new_dir_path + " already created")
                         config.dest_dir = new_dir_path
                     process_iqs_file(file_path, config)

@@ -1,6 +1,7 @@
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from inspect import Signature, isclass, signature
-from typing import Any, Callable, cast, get_type_hints
+from typing import Any, cast, get_type_hints
 
 from ..utility import find_duplicates
 

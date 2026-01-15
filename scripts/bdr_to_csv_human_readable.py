@@ -1,10 +1,10 @@
-from pathlib import Path
-from math import sqrt, log10, atan2
-import csv
 import argparse
+import csv
+from math import atan2, log10, sqrt
+from pathlib import Path
 
-from pilus.sbt import bdr_from_io as from_io
 from pilus.errors import PilusDeserializeError
+from pilus.sbt import bdr_from_io as from_io
 
 
 def process_file(file: Path):
@@ -14,7 +14,7 @@ def process_file(file: Path):
             bdr_aggregate = from_io(io)
     except PilusDeserializeError as exc:
         print(f"Skipping {file.name}")
-        print(f"Reason: {str(exc)}")
+        print(f"Reason: {exc!s}")
 
     output = {
         "site": [],

@@ -1,13 +1,12 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-
-from pyfakefs.fake_filesystem import FakeFilesystem
-from tinydb import where
 
 from pilus._magic import Medium
 from pilus.basic import Lpcm, Wave, WaveMeta
 from pilus.sbt import Extrema, Extremum, ExtremumType
 from pilus.snipdb import SnipDb, SnipRow
+from pyfakefs.fake_filesystem import FakeFilesystem
+from tinydb import where
 
 from ._assets import ASSETS_DIR
 
@@ -117,20 +116,16 @@ def test_snip(fs: FakeFilesystem) -> None:
     one_us = timedelta(microseconds=1)
     assert extrema == (
         Extremum(
-            time_point=datetime.fromtimestamp(123, timezone.utc) + one_us,
+            time_point=datetime.fromtimestamp(123, tz=UTC) + one_us,
             value=42.1,
             type_=ExtremumType.MAXIMUM,
         ),
         Extremum(
-            time_point=datetime.fromtimestamp(143, timezone.utc),
+            time_point=datetime.fromtimestamp(143, tz=UTC),
             value=-8.8,
             type_=ExtremumType.MINIMUM,
         ),
     )
-
-    print("=======")
-    for row in project:
-        print(f"{type(row.content)=} {row.metadata=}")
 
     # Snip automatically combines the `.wav` and `.wave-meta.json` into one when
     # we query for `Wave`.

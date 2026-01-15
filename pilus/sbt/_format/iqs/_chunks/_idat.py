@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING, Any, BinaryIO, ClassVar, Optional
+from typing import TYPE_CHECKING, Any, BinaryIO, ClassVar
 
 from .....errors import PilusDeserializeError
 from ...._model import IqsChannelData
@@ -37,8 +37,8 @@ class IdatChunk:
         cls,
         *chunks: IdatChunk,
         ihdr: IhdrChunk,
-        contiguous_tolerance: Optional[timedelta] = None,
-        fill_missing_values_with: Optional[bytes] = None,
+        contiguous_tolerance: timedelta | None = None,
+        fill_missing_values_with: bytes | None = None,
     ) -> IdatChunk:
         """Merge all the chunks into one.
 
@@ -128,7 +128,7 @@ class IdatChunk:
     def raise_if_not_contiguous(
         cls,
         *chunks: IdatChunk,
-        tolerance: Optional[timedelta] = None,
+        tolerance: timedelta | None = None,
     ) -> None:
         """Raise an `PilusDeserializeError` error if the given chunks are not adjoined in time."""
         # Default arguments
@@ -151,7 +151,7 @@ class IdatChunk:
 
     @classmethod
     def from_sdat(
-        cls, sdat: "SdatChunk", *, site_name: str, time_step_ns: int
+        cls, sdat: SdatChunk, *, site_name: str, time_step_ns: int
     ) -> IdatChunk:
         """Convert the SDAT chunk into an IDAT chunk.
 

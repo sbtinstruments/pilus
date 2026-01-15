@@ -1,10 +1,9 @@
 from datetime import timedelta
 from pathlib import Path
 
-from pyfakefs.fake_filesystem import FakeFilesystem
-
 from pilus.sbt import IqsAggregate
 from pilus.sbt._format import iqs
+from pyfakefs.fake_filesystem import FakeFilesystem
 
 from ._assets import ASSETS_DIR
 

@@ -1,4 +1,3 @@
-from pathlib import Path
 
 from ....forge import FORGE
 
@@ -6,9 +5,9 @@ from ....forge import FORGE
 def show() -> None:
     nodes = FORGE._morphers._graph.nodes
     edges = FORGE._morphers._graph.edges
-    print(f"=== NODES ===")
+    print("=== NODES ===")
     for node in nodes:
         print(str(node))
-    print(f"=== EDGES ===")
+    print("=== EDGES ===")
     for edge in edges:
         print(str(edge))

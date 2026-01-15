@@ -1,8 +1,9 @@
+from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from itertools import pairwise
 from os import PathLike
 from pathlib import Path
-from typing import Any, BinaryIO, Iterable, Iterator, cast, get_origin
+from typing import Any, BinaryIO, cast, get_origin
 
 import networkx as nx
 

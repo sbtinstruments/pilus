@@ -1,8 +1,9 @@
+from collections.abc import Iterator
 from contextlib import contextmanager
 from io import BytesIO
 from os import PathLike
 from pathlib import Path
-from typing import BinaryIO, Iterator, cast
+from typing import BinaryIO, cast
 
 import magic
 

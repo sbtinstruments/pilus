@@ -1,12 +1,11 @@
 from pathlib import Path
 
 import polars as pl
-from pyfakefs.fake_filesystem import FakeFilesystem
-
 from pilus._magic import Medium
 from pilus.basic import Wave, lpcm_to_io
 from pilus.forge import FORGE
 from pilus.snipdb import SnipDb
+from pyfakefs.fake_filesystem import FakeFilesystem
 
 from ._assets import ASSETS_DIR
 

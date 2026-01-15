@@ -1,8 +1,7 @@
 from pathlib import Path
 
-from pyfakefs.fake_filesystem import FakeFilesystem
-
 from pilus.basic import Lpcm
+from pyfakefs.fake_filesystem import FakeFilesystem
 
 from ._assets import ASSETS_DIR
 

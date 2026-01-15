@@ -21,7 +21,7 @@ class SdatChunk:
     interleaved_data: bytes
 
     @classmethod
-    def from_idat(cls, idat: "IdatChunk", *, site_to_keep: str) -> SdatChunk:
+    def from_idat(cls, idat: IdatChunk, *, site_to_keep: str) -> SdatChunk:
         """Convert the IDAT chunk into an SDAT chunk.
 
         May raise:

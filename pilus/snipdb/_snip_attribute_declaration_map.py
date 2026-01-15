@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, Optional
+from collections.abc import Iterable
 
 from pydantic import RootModel, field_validator
 
@@ -103,7 +103,7 @@ class SnipAttrDeclMap(RootModel, frozen=True):
                 return (name, SnipEnum(declaration=declaration, value=raw_value))
         raise ValueError(f'Could not parse attribute: "{raw_attribute}"')
 
-    def get_enum_from_value(self, value: str) -> Optional[tuple[str, SnipEnum]]:
+    def get_enum_from_value(self, value: str) -> tuple[str, SnipEnum] | None:
         """Return the (name, enum) pair that corresponds to the given value."""
         for name, enum in self.enums:
             if value in enum.values:

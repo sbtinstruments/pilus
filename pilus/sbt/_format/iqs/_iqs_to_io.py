@@ -1,4 +1,4 @@
-from typing import BinaryIO, Optional
+from typing import BinaryIO
 
 from ...._magic.signatures import IQS_SIGNATURE
 from ..._model import IqsAggregate, IqsChannelData, IqsChannelHeader
@@ -13,7 +13,7 @@ def to_io(
     io: BinaryIO,
     *,
     version: IqsVersion = IqsVersion.V2_0_0,
-    site_to_keep: Optional[str] = None,
+    site_to_keep: str | None = None,
 ) -> None:
     """Serialize IQS aggregate to the IO stream.
 

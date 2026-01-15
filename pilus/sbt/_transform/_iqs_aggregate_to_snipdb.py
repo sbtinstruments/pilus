@@ -1,4 +1,5 @@
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 from ...basic import Lpcm, Wave, WaveMeta
 from ...forge import FORGE

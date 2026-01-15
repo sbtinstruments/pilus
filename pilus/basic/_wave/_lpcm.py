@@ -11,7 +11,7 @@ class Lpcm(ForgeIO):
 
     byte_depth: int
     time_step_ns: int
-    data: bytes = bytes()
+    data: bytes = b""
 
     def __post_init__(self) -> None:
         if len(self.data) % self.byte_depth != 0:

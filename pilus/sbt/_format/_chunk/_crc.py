@@ -1,4 +1,4 @@
-from typing import Callable
+from collections.abc import Callable
 
 crc32: Callable[[bytes, int], int]
 
@@ -11,4 +11,4 @@ crc32: Callable[[bytes, int], int]
 try:
     from zlib import crc32
 except ImportError:
-    from binascii import crc32
+    pass

@@ -1,10 +1,8 @@
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-
 from pilus.formats import iqs
-
-from pilus.numerics import iqs_to_numpy_array, iqs_timestamp_array
+from pilus.numerics import iqs_timestamp_array, iqs_to_numpy_array
 
 data_file = Path(
     "/home/jonatan/Downloads/test of flowcells with and without filter/bb2017025/1B511-D6Q/measure-20210809-145431-A79.iqs"

@@ -42,10 +42,10 @@ def read_double(io: BinaryIO) -> float:
     data = read_exactly(io, 8)
     try:
         (value,) = unpack("d", data)
-        assert isinstance(value, float)
-        return value
     except ValueError as exc:
         raise PilusDeserializeError("Could not decode double") from exc
+    assert isinstance(value, float)
+    return value
 
 
 def read_terminated_string(

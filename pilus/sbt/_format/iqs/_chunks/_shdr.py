@@ -40,7 +40,7 @@ class ShdrChunk:
         )
 
     @classmethod
-    def from_io(cls, io: BinaryIO, **kwargs: Any) -> ShdrChunk:
+    def from_io(cls, io: BinaryIO, **_kwargs: Any) -> ShdrChunk:
         """Deserialize the IO stream into an SHDR chunk.
 
         May raise `PilusDeserializeError` or one of its derivatives.

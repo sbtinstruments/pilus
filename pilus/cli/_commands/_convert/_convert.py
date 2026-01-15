@@ -7,7 +7,7 @@ from ....forge import FORGE
 
 
 def convert(
-    input: Path,  # pylint: disable=redefined-builtin
+    input: Path,  # pylint: disable=redefined-builtin  # noqa: A002
     output: Path,
     *,
     input_media_type: str | None = Option(None),

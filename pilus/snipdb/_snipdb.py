@@ -69,9 +69,11 @@ class SnipDb(ForgeIO):
 
     def __init__(
         self,
-        rows: Iterable[SnipRow[Any]] = tuple(),
-        attr_decls: SnipAttrDeclMap = SnipAttrDeclMap(),
+        rows: Iterable[SnipRow[Any]] = (),
+        attr_decls: SnipAttrDeclMap | None = None,
     ) -> None:
+        if attr_decls is None:
+            attr_decls = SnipAttrDeclMap()
         self._core = SnipDbCore(rows, attr_decls)
 
     @classmethod

@@ -1,1 +1,1 @@
-from ._show import show
+from ._show import show as show

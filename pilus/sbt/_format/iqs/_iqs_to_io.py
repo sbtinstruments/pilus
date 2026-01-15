@@ -36,7 +36,7 @@ def to_io(
         write_chunk(io, ShdrChunk.from_ihdr(ihdr, site_to_keep=site_to_keep))
         write_chunk(io, SdatChunk.from_idat(idat, site_to_keep=site_to_keep))
     else:
-        assert False
+        raise ValueError(f"Unsupported IQS version: {version}")
 
 
 def _aggregate_to_chunks(aggregate: IqsAggregate) -> tuple[IhdrChunk, IdatChunk]:
@@ -46,9 +46,9 @@ def _aggregate_to_chunks(aggregate: IqsAggregate) -> tuple[IhdrChunk, IdatChunk]
 
 def _aggregate_to_idat(aggregate: IqsAggregate) -> IdatChunk:
     """Return the data-specific parts of the aggregate as an IDAT chunk."""
-    idat_sites: dict[str, SiteData] = dict()
+    idat_sites: dict[str, SiteData] = {}
     for site_name, site in aggregate.sites.items():
-        idat_site: SiteData = dict()
+        idat_site: SiteData = {}
         for channel_name, channel in site.items():
             idat_channel = IqsChannelData(channel.re, channel.im)
             idat_site[channel_name] = idat_channel
@@ -58,9 +58,9 @@ def _aggregate_to_idat(aggregate: IqsAggregate) -> IdatChunk:
 
 def _aggregate_to_ihdr(aggregate: IqsAggregate) -> IhdrChunk:
     """Return the header-specific parts of the aggregate as an IHDR chunk."""
-    ihdr_sites: dict[str, SiteHeader] = dict()
+    ihdr_sites: dict[str, SiteHeader] = {}
     for site_name, site in aggregate.sites.items():
-        ihdr_site: SiteHeader = dict()
+        ihdr_site: SiteHeader = {}
         for channel_name, channel in site.items():
             ihdr_channel = IqsChannelHeader(
                 channel.time_step_ns, channel.byte_depth, channel.max_amplitude

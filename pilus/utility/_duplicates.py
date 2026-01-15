@@ -1,10 +1,7 @@
 from collections.abc import Iterable
-from typing import TypeVar
-
-T = TypeVar("T")
 
 
-def find_duplicates(data: Iterable[T]) -> Iterable[T]:
+def find_duplicates[T](data: Iterable[T]) -> Iterable[T]:
     """Return duplicates in the given data.
 
     Worst-case run-time:   O(n*log(n))

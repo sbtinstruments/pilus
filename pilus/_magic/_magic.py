@@ -54,4 +54,4 @@ def _as_binary_io(medium: RawMedium) -> Iterator[BinaryIO]:
         yield BytesIO(medium)
     else:
         # We cover all the cases of the `RawMedium` type
-        assert False
+        raise TypeError(f"Unsupported medium type: {type(medium)!r}")

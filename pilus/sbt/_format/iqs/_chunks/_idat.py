@@ -60,9 +60,9 @@ class IdatChunk:
         )
         # Go through the site/channel hierarchy based on that of the first chunk.
         # We assume that the subsequent chunks follow the same hierarchy.
-        merged_value: dict[str, SiteData] = dict()
+        merged_value: dict[str, SiteData] = {}
         for site_name, site_data in first_chunk.sites.items():
-            merged_site: SiteData = dict()
+            merged_site: SiteData = {}
             for channel_name in site_data:
                 channel_header = ihdr[site_name][channel_name]
                 # Make sure that the rough computation of `total_duration_ns` at [1]
@@ -130,7 +130,7 @@ class IdatChunk:
         *chunks: IdatChunk,
         tolerance: timedelta | None = None,
     ) -> None:
-        """Raise an `PilusDeserializeError` error if the given chunks are not adjoined in time."""
+        """Raise a `PilusDeserializeError` if chunks are not adjoined in time."""
         # Default arguments
         if tolerance is None:
             tolerance = timedelta(microseconds=2)
@@ -189,9 +189,9 @@ class IdatChunk:
         timestamp_us = read_int(io, 8)
         duration_ns = read_int(io, 8)
 
-        idat_value: dict[str, SiteData] = dict()
+        idat_value: dict[str, SiteData] = {}
         for site_name, site_header in ihdr.items():
-            site_data: SiteData = dict()
+            site_data: SiteData = {}
             for channel_name, channel_header in site_header.items():
                 if duration_ns % channel_header.time_step_ns != 0:
                     raise PilusDeserializeError(

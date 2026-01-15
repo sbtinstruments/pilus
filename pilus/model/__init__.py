@@ -1,1 +1,1 @@
-from ._frozen_model import FrozenModel
+from ._frozen_model import FrozenModel as FrozenModel

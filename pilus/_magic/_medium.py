@@ -46,4 +46,4 @@ def _type_of_raw(raw: RawMedium) -> RawMediumType:
         return BinaryIO
     if isinstance(raw, bytes):
         return bytes
-    assert False, "We should cover all cases of RawMedium"
+    raise TypeError(f"Unsupported raw medium type: {type(raw)!r}")

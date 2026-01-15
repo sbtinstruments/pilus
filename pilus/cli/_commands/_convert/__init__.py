@@ -1,1 +1,1 @@
-from ._convert import convert
+from ._convert import convert as convert

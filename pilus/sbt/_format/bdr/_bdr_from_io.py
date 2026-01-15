@@ -29,7 +29,7 @@ def from_io(io: Annotated[BinaryIO, "application/vnd.sbt.bdr"]) -> BdrAggregate:
     chunk_stream = stream_chunks(  # [1]
         io, chunk_models=(AhdrChunk, TranChunk), channel_names=header.channel_names
     )
-    mutable_sites: dict[str, MutableSite] = dict()
+    mutable_sites: dict[str, MutableSite] = {}
     for chunk in chunk_stream:
         if isinstance(chunk, AhdrChunk):
             if header.channel_names != chunk.channel_names:
@@ -42,7 +42,7 @@ def from_io(io: Annotated[BinaryIO, "application/vnd.sbt.bdr"]) -> BdrAggregate:
             site = _chunks_to_site(ahdr=header, tran=chunk)
             _add_to_sites(mutable_sites, header.site_name, site)
         else:
-            assert False
+            raise TypeError(f"Unexpected chunk type: {type(chunk)!r}")
     # Freeze (and validate)
     try:
         sites = _freeze_sites(mutable_sites)

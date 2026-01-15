@@ -32,8 +32,9 @@ class Combiner:
         )
         for nonsimple_arg_type in non_simple_arg_types:
             raise ValueError(
-                "Combine func must use simple (e.g., non-union) type annotations for all"
-                f' its arguments. Type "{nonsimple_arg_type}" is non-simple.'
+                "Combine func must use simple (e.g., non-union) type annotations "
+                "for all its arguments. "
+                f'Type "{nonsimple_arg_type}" is non-simple.'
             )
         arg_types = cast(list[type], arg_types)
         # We want to ensure that all `func`'s arguments are typed. Unfortunately,
@@ -66,7 +67,7 @@ class Combiner:
         try:
             return_type = type_hints["return"]
         except KeyError:
-            raise ValueError("Combine func must specify the return type")
+            raise ValueError("Combine func must specify the return type") from None
         if not isclass(return_type):
             raise ValueError(
                 "Combine func must use a simple type annotation for its return type."

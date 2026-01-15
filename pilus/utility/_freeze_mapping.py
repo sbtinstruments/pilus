@@ -1,14 +1,12 @@
 from collections.abc import Mapping
-from typing import TypeVar
 
 from immutables import Map
 
-Key = TypeVar("Key")
-Val = TypeVar("Val")
-
 
 # mypy can't handle the return inside the with statement. Hence the ignore.
-def freeze_mapping(mapping: Mapping[Key, Val]) -> Map[Key, Val]:  # type: ignore[return]
+def freeze_mapping[Key, Val](  # type: ignore[return]
+    mapping: Mapping[Key, Val],
+) -> Map[Key, Val]:
     """Convert `Mapping` into `immutables.Map`.
 
     Unlike `immutables.Map.__init__`, this function works for non-string keys.

@@ -31,9 +31,11 @@ AttributeNameAndValues = frozenset[tuple[str, SnipAttr]]
 class SnipDbCore:
     def __init__(
         self,
-        rows: Iterable[SnipRow[Any]] = tuple(),
-        attr_decls: SnipAttrDeclMap = SnipAttrDeclMap(),
+        rows: Iterable[SnipRow[Any]] = (),
+        attr_decls: SnipAttrDeclMap | None = None,
     ) -> None:
+        if attr_decls is None:
+            attr_decls = SnipAttrDeclMap()
         self._db = TinyDB(storage=MemoryStorage)
         documents = (
             {
@@ -106,7 +108,7 @@ class SnipDbCore:
         # Rows that we can *combine* into the given type
         if rows := tuple(self._combine_rows_to_type(type_, *args, **kwargs)):
             return rows
-        return tuple()
+        return ()
 
     def _get_rows_of_type(
         self, type_: type[T], *args: Any, **kwargs: Any
@@ -122,9 +124,10 @@ class SnipDbCore:
         """Reshape each row into the given type (skipping ahead if impossible)."""
         # Get all rows that match the given arguments *regardless of the type*.
         #
-        # TODO: Make this more performant. Do not simply query across all types. For now,
-        # however, this does not matter at all since all snip DBs that we have on record
-        # has at most 10 entries. In other words, query performance is not an issue.
+        # TODO: Make this more performant. Do not simply query across all types.
+        # For now, however, this does not matter at all since all snip DBs that we
+        # have on record has at most 10 entries. In other words, query performance
+        # is not an issue.
         try:
             query = self._args_to_query(None, *args, **kwargs)
         except ValueError:  # Empty query
@@ -154,7 +157,7 @@ class SnipDbCore:
         Considers all rows that match the given metadata (name and attributes).
         """
         # Find all combiners that outputs the given type (regardless of input types)
-        combiners = FORGE._combiners.get_combiners(output_type=type_)
+        combiners = FORGE.get_combiners(output_type=type_)
 
         # Go through each combiner and see if we can produce relevant inputs
         # for said combiner.
@@ -225,8 +228,7 @@ class SnipDbCore:
         if not queries:
             raise ValueError("You must provide at least one argument")
         # Combine all queries into one
-        query = reduce(Query.__and__, queries)
-        return query
+        return reduce(Query.__and__, queries)
 
     def __iter__(self) -> Iterator[SnipRow[Any]]:
         """Return iterator of all rows in this database."""

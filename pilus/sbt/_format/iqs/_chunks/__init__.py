@@ -1,5 +1,9 @@
-from ._chunk import DataChunk, HeaderChunk
-from ._idat import IdatChunk, SiteData
-from ._ihdr import IhdrChunk, MaxAmplitudeMode, SiteHeader
-from ._sdat import SdatChunk
-from ._shdr import ShdrChunk
+from ._chunk import DataChunk as DataChunk
+from ._chunk import HeaderChunk as HeaderChunk
+from ._idat import IdatChunk as IdatChunk
+from ._idat import SiteData as SiteData
+from ._ihdr import IhdrChunk as IhdrChunk
+from ._ihdr import MaxAmplitudeMode as MaxAmplitudeMode
+from ._ihdr import SiteHeader as SiteHeader
+from ._sdat import SdatChunk as SdatChunk
+from ._shdr import ShdrChunk as ShdrChunk

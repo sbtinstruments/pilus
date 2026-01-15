@@ -18,7 +18,7 @@ class AhdrChunk:
     time_end: int
 
     @classmethod
-    def from_io(cls, io: BinaryIO, **kwargs: Any) -> AhdrChunk:
+    def from_io(cls, io: BinaryIO, **_kwargs: Any) -> AhdrChunk:
         """Deserialize the IO stream into an AHDR chunk.
 
         May raise `BdrError` or one of its derivatives.

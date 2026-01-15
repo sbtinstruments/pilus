@@ -30,17 +30,17 @@ class IhdrChunk(dict[str, SiteHeader]):
         return cls(sites)
 
     @classmethod
-    def from_io(cls, io: BinaryIO, **kwargs: Any) -> IhdrChunk:
+    def from_io(cls, io: BinaryIO, **_kwargs: Any) -> IhdrChunk:
         """Deserialize the IO stream into an IHDR chunk.
 
         May raise `IqsError` or one of its derivatives.
         """
         number_of_sites = read_int(io, 4)
-        sites: dict[str, SiteHeader] = dict()
+        sites: dict[str, SiteHeader] = {}
         for _ in range(number_of_sites):
             site_name = read_terminated_string(io, 256)  # E.g.: "site0"
             number_of_channels = read_int(io, 4)
-            site_header: SiteHeader = dict()
+            site_header: SiteHeader = {}
             for _ in range(number_of_channels):
                 channel_name = read_terminated_string(io, 256)  # E.g.: "hf"
                 time_step_ns = read_int(io, 4)
@@ -94,16 +94,17 @@ class IhdrChunk(dict[str, SiteHeader]):
                 for site_name, site_header in self.items():
                     new_site_header: SiteHeader = {}
                     for channel_name, channel_header in site_header.items():
+                        updated_channel_header = channel_header
                         # Due to a rounding error, the IQS serializer in
                         # baxter returns the wrong `max_amplitude` value.
                         # Luckily, it's easy to detect since the value
                         # is always the same.
-                        if channel_header.max_amplitude == 178433194:
-                            channel_header = dataclasses.replace(
-                                channel_header,
-                                max_amplitude=channel_header.max_amplitude + 1,
+                        if updated_channel_header.max_amplitude == 178433194:
+                            updated_channel_header = dataclasses.replace(
+                                updated_channel_header,
+                                max_amplitude=updated_channel_header.max_amplitude + 1,
                             )
-                        new_site_header[channel_name] = channel_header
+                        new_site_header[channel_name] = updated_channel_header
                     new_sites[site_name] = new_site_header
                 return IhdrChunk(new_sites)
             case other:

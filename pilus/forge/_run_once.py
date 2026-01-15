@@ -1,12 +1,8 @@
 from collections.abc import Callable
 from functools import wraps
-from typing import ParamSpec, TypeVar
-
-P = ParamSpec("P")
-T = TypeVar("T")
 
 
-def run_once(func: Callable[P, T]) -> Callable[P, T | None]:
+def run_once[**P, T](func: Callable[P, T]) -> Callable[P, T | None]:
     """Wrap func so that it only runs on the first call.
 
     All subsequent calls are no-op. Effectively, this makes the function idempotent.

@@ -1,20 +1,24 @@
 import argparse
 import csv
+import logging
 from math import atan2, log10, sqrt
 from pathlib import Path
 
 from pilus.errors import PilusDeserializeError
 from pilus.sbt import bdr_from_io as from_io
 
+logger = logging.getLogger(__name__)
 
-def process_file(file: Path):
-    print("Processing: ", file)
+
+def process_file(file: Path) -> None:
+    logger.info("Processing: %s", file)
     try:
         with file.open("rb") as io:
             bdr_aggregate = from_io(io)
     except PilusDeserializeError as exc:
-        print(f"Skipping {file.name}")
-        print(f"Reason: {exc!s}")
+        logger.warning("Skipping %s", file.name)
+        logger.warning("Reason: %s", exc)
+        return
 
     output = {
         "site": [],
@@ -38,9 +42,9 @@ def process_file(file: Path):
                 )
                 output[name + "_phase_rad"].append(atan2(fit.im.scale, fit.re.scale))
 
-    OUTPUT_FILE = file.parent / (file.stem + ".csv")
-    with open(OUTPUT_FILE, "w", newline="", encoding="utf-8") as file:
-        writer = csv.DictWriter(file, fieldnames=output.keys())
+    output_file = file.parent / (file.stem + ".csv")
+    with output_file.open("w", newline="", encoding="utf-8") as output_handle:
+        writer = csv.DictWriter(output_handle, fieldnames=output.keys())
 
         # Write header
         writer.writeheader()
@@ -51,7 +55,8 @@ def process_file(file: Path):
             writer.writerow(row)
 
 
-def main():
+def main() -> None:
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     parser = argparse.ArgumentParser(
         description="Process .bdr files into amplitude CSVs."
     )

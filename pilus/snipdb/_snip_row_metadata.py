@@ -25,7 +25,7 @@ class SnipRowMetadata(BaseModel):
 
     name: str
     attributes: Annotated[SnipAttributeMap, Field(default_factory=Map)]
-    suffixes: tuple[str, ...] = tuple()
+    suffixes: tuple[str, ...] = ()
 
     @classmethod
     def from_file_name(

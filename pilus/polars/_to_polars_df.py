@@ -8,6 +8,7 @@ from pilus.sbt import BdrAggregate
 from pilus.snipdb import SnipDb, SnipRow
 
 from ..forge import FORGE
+from ..sbt import TransitionFit
 
 
 @FORGE.register_transformer
@@ -103,20 +104,6 @@ def bdr_aggregate_to_polars_df(bdr: BdrAggregate) -> pl.DataFrame:
                 fits_values = np.full(len(time), np.nan)
 
                 for fit_complex, fit in zip(fit_complexes, fits, strict=True):
-
-                    def gauss_array(center: float, ts: np.ndarray) -> np.ndarray:
-                        return fit.scale * np.exp(
-                            -(ts - center)
-                            * (ts - center)
-                            / (2.0 * fit.width * fit.width)
-                        )
-
-                    def _fit_model_array(ts: np.ndarray) -> np.ndarray:
-                        transition = gauss_array(
-                            fit.center - fit.offset, ts
-                        ) - gauss_array(fit.center + fit.offset, ts)
-                        return transition + fit.baseline
-
                     time_start = fit_complex.time_start
                     time_end = fit_complex.time_end
                     start_idx = max(round((time_start - time_start_s) / time_step_s), 0)
@@ -124,13 +111,25 @@ def bdr_aggregate_to_polars_df(bdr: BdrAggregate) -> pl.DataFrame:
                         round((time_end - time_start_s) / time_step_s),
                         len(time) - 1,
                     )
-
                     fit_ts = (
                         time[start_idx:end_idx].to_numpy().astype(dtype=np.float64)
                         * 1e-9
                     )
-                    fits_values[start_idx:end_idx] = _fit_model_array(fit_ts)
+                    fits_values[start_idx:end_idx] = _fit_model_array(fit_ts, fit=fit)
 
                 data[f"{site_name}-{channel_name}-{part_name}"] = fits_values
 
     return pl.DataFrame({"time": time, **data})
+
+
+def _fit_model_array(ts: np.ndarray, *, fit: TransitionFit) -> np.ndarray:
+    transition = _gauss_array(fit.center - fit.offset, ts, fit=fit) - _gauss_array(
+        fit.center + fit.offset, ts, fit=fit
+    )
+    return transition + fit.baseline
+
+
+def _gauss_array(center: float, ts: np.ndarray, *, fit: TransitionFit) -> np.ndarray:
+    return fit.scale * np.exp(
+        -(ts - center) * (ts - center) / (2.0 * fit.width * fit.width)
+    )

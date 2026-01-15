@@ -206,5 +206,4 @@ def _reserve(io: BinaryIO, size: int) -> None:
 def _chunk_crc(chunk_type: bytes, chunk_data: bytes) -> int:
     crc = 0xFFFFFFFF
     crc = crc32(chunk_type, crc)
-    crc = crc32(chunk_data, crc)
-    return crc
+    return crc32(chunk_data, crc)

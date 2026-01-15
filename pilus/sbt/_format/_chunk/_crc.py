@@ -9,6 +9,8 @@ crc32: Callable[[bytes, int], int]
 #
 # We prefer (1) but fall back on (2).
 try:
-    from zlib import crc32
+    from zlib import crc32 as _crc32
 except ImportError:
-    pass
+    from binascii import crc32 as _crc32
+
+crc32 = _crc32

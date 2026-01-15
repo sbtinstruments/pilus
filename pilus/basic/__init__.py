@@ -1,3 +1,10 @@
-from ._box import Box, Manifest, box_from_dir
-from ._simple_table import SimpleTable, table_to_csv
-from ._wave import Lpcm, Wave, WaveMeta, lpcm_from_io, lpcm_to_io
+from ._box import Box as Box
+from ._box import Manifest as Manifest
+from ._box import box_from_dir as box_from_dir
+from ._simple_table import SimpleTable as SimpleTable
+from ._simple_table import table_to_csv as table_to_csv
+from ._wave import Lpcm as Lpcm
+from ._wave import Wave as Wave
+from ._wave import WaveMeta as WaveMeta
+from ._wave import lpcm_from_io as lpcm_from_io
+from ._wave import lpcm_to_io as lpcm_to_io

@@ -1,19 +1,15 @@
-from ._snip_attribute_declaration_map import SnipAttrDeclMap
-from ._snip_attributes import (
-    SnipAttr,
-    SnipAttrDecl,
-    SnipEnum,
-    SnipEnumDecl,
-    SnipInt,
-    SnipIntDecl,
-    SnipStr,
-    SnipStrDecl,
-)
-from ._snip_row import SnipRow
-from ._snip_row_metadata import (
-    SnipAttributeMap,
-    SnipRowMetadata,
-    create_attribute_map,
-)
-from ._snipdb import SnipDb
-from ._transform import box_to_snipdb
+from ._snip_attribute_declaration_map import SnipAttrDeclMap as SnipAttrDeclMap
+from ._snip_attributes import SnipAttr as SnipAttr
+from ._snip_attributes import SnipAttrDecl as SnipAttrDecl
+from ._snip_attributes import SnipEnum as SnipEnum
+from ._snip_attributes import SnipEnumDecl as SnipEnumDecl
+from ._snip_attributes import SnipInt as SnipInt
+from ._snip_attributes import SnipIntDecl as SnipIntDecl
+from ._snip_attributes import SnipStr as SnipStr
+from ._snip_attributes import SnipStrDecl as SnipStrDecl
+from ._snip_row import SnipRow as SnipRow
+from ._snip_row_metadata import SnipAttributeMap as SnipAttributeMap
+from ._snip_row_metadata import SnipRowMetadata as SnipRowMetadata
+from ._snip_row_metadata import create_attribute_map as create_attribute_map
+from ._snipdb import SnipDb as SnipDb
+from ._transform import box_to_snipdb as box_to_snipdb

@@ -14,6 +14,7 @@ from typing import (
     get_type_hints,
 )
 
+from networkx.classes.reportviews import EdgeView, NodeView
 from pydantic import BaseModel
 
 from .._magic import Medium, MediumSpec, RawMediumType
@@ -129,7 +130,7 @@ class Forge:
         elif issubclass(first_arg_type, PathLike):
             raw_type = PathLike
         else:
-            ValueError("Unsupported first argument type")
+            raise TypeError("Unsupported first argument type")
         input_spec = MediumSpec(raw_type=raw_type, media_type=media_type)
         output_spec = type_hints["return"]
         morpher = Morpher(input=input_spec, output=output_spec, func=func)
@@ -154,7 +155,7 @@ class Forge:
         elif issubclass(arg_raw_type, PathLike):
             output_raw_type = PathLike
         else:
-            ValueError("Unsupported first argument type")
+            raise TypeError("Unsupported first argument type")
         output_spec = MediumSpec(raw_type=output_raw_type, media_type=output_media_type)
         morpher = Morpher(input=input_type, output=output_spec, func=func)
         self.add_morpher(morpher)
@@ -174,6 +175,25 @@ class Forge:
 
     def add_morpher(self, morpher: Morpher) -> None:
         self._morphers.add_morpher(morpher)
+
+    def spec_to_type(self, spec: ShapeSpec) -> type:
+        return self._morphers.spec_to_type(spec)
+
+    def morph_graph_nodes(self) -> NodeView:
+        return self._morphers.nodes()
+
+    def morph_graph_edges(self) -> EdgeView:
+        return self._morphers.edges()
+
+    def get_combiners(
+        self,
+        *,
+        input_types: frozenset[type] | None = None,
+        output_type: type | None = None,
+    ) -> Iterable[Combiner]:
+        return self._combiners.get_combiners(
+            input_types=input_types, output_type=output_type
+        )
 
     def deserialize(self, input_medium: Medium, output_type: type[T]) -> T:
         """Deserialize the input medium into the output type.

@@ -1,13 +1,12 @@
-
 from ....forge import FORGE
 
 
 def show() -> None:
-    nodes = FORGE._morphers._graph.nodes
-    edges = FORGE._morphers._graph.edges
-    print("=== NODES ===")
+    nodes = FORGE.morph_graph_nodes()
+    edges = FORGE.morph_graph_edges()
+    print("=== NODES ===")  # noqa: T201
     for node in nodes:
-        print(str(node))
-    print("=== EDGES ===")
+        print(str(node))  # noqa: T201
+    print("=== EDGES ===")  # noqa: T201
     for edge in edges:
-        print(str(edge))
+        print(str(edge))  # noqa: T201

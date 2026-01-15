@@ -116,5 +116,5 @@ def _identify_and_deserialize_file(
     # python type.
     assert mode == "store-deserialized-data"
     file_spec = MediumSpec(raw_type=PathLike, media_type=media_type)
-    output_type = FORGE._morphers.spec_to_type(file_spec)
+    output_type = FORGE.spec_to_type(file_spec)
     return FORGE.deserialize(input_medium, output_type)

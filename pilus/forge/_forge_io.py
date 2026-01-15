@@ -16,17 +16,13 @@ class ForgeIO:
     """Serialization/deserialization via a `Forge` instance."""
 
     @classmethod
-    def from_io(
-        cls, io: BinaryIO, *, media_type: str | None = None
-    ) -> Self:
+    def from_io(cls, io: BinaryIO, *, media_type: str | None = None) -> Self:
         """Deserialize IO stream into an instance of this class."""
         input_medium = Medium.from_raw(io, media_type=media_type)
         return FORGE.deserialize(input_medium, cls)
 
     @classmethod
-    def from_file(
-        cls, file: Path, *, media_type: str | None = None
-    ) -> Self:
+    def from_file(cls, file: Path, *, media_type: str | None = None) -> Self:
         """Deserialize file into an instance of this class."""
         input_medium = Medium.from_raw(file, media_type=media_type)
         return FORGE.deserialize(input_medium, cls)

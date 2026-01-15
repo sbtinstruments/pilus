@@ -1,11 +1,12 @@
 from collections.abc import Iterable, Iterator
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from itertools import pairwise
 from os import PathLike
 from pathlib import Path
 from typing import Any, BinaryIO, cast, get_origin
 
 import networkx as nx
+from networkx.classes.reportviews import EdgeView, NodeView
 
 from .._magic import MediumSpec
 from ..errors import PilusMissingMorpherError
@@ -26,15 +27,19 @@ class MorphGraph:
         Removes the existing edge (if any).
         """
         # Remove existing edge (if any)
-        try:
+        with suppress(nx.NetworkXError):
             self._graph.remove_edge(morpher.input, morpher.output)
-        except nx.NetworkXError:
-            pass
         # Add new edge
         self._graph.add_edge(morpher.input, morpher.output, func=morpher.func)
         # Generate edges
         if isinstance(morpher.input, MediumSpec):
             self._generate_edges_to_medium_spec(morpher.input)
+
+    def nodes(self) -> NodeView:
+        return self._graph.nodes
+
+    def edges(self) -> EdgeView:
+        return self._graph.edges
 
     def _generate_edges_to_medium_spec(self, spec: MediumSpec) -> None:
         if spec.raw_type is BinaryIO:
@@ -75,7 +80,7 @@ class MorphGraph:
         """Return morph functions that morphs `in_spec` into `out_spec`."""
         # Early out if there is nothing to morph
         if in_spec == out_spec:
-            return tuple()
+            return ()
         # We find the shortest sequence of morphs that takes
         # us from the source type into the destination type.
         try:

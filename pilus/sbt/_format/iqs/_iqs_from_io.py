@@ -78,10 +78,10 @@ def _chunks_to_aggregate(ihdr: IhdrChunk, idat: IdatChunk) -> IqsAggregate:
 
     We assume that the given chunks follow the same site-channel hierarchy.
     """
-    aggregate_sites: dict[str, IqsAggregateSite] = dict()
+    aggregate_sites: dict[str, IqsAggregateSite] = {}
     for site_name, data_site in idat.sites.items():
         site_header = ihdr[site_name]
-        aggregate_site: IqsAggregateSite = dict()
+        aggregate_site: IqsAggregateSite = {}
         for channel_name, data_channel in data_site.items():
             channel_header = site_header[channel_name]
             aggregate_channel = IqsAggregateChannel(

@@ -1,15 +1,14 @@
-from ._bdr_aggregate import (
-    BdrAggregate,
-    BdrAggregateChannel,
-    BdrAggregateSite,
-    TransitionFitChannel,
-)
-from ._extremum import Extrema, Extremum, ExtremumType
-from ._iqs_aggregate import (
-    IqsAggregate,
-    IqsAggregateChannel,
-    IqsAggregateSite,
-    IqsChannelData,
-    IqsChannelHeader,
-)
-from ._transition_fit import FitComplex, TransitionFit
+from ._bdr_aggregate import BdrAggregate as BdrAggregate
+from ._bdr_aggregate import BdrAggregateChannel as BdrAggregateChannel
+from ._bdr_aggregate import BdrAggregateSite as BdrAggregateSite
+from ._bdr_aggregate import TransitionFitChannel as TransitionFitChannel
+from ._extremum import Extrema as Extrema
+from ._extremum import Extremum as Extremum
+from ._extremum import ExtremumType as ExtremumType
+from ._iqs_aggregate import IqsAggregate as IqsAggregate
+from ._iqs_aggregate import IqsAggregateChannel as IqsAggregateChannel
+from ._iqs_aggregate import IqsAggregateSite as IqsAggregateSite
+from ._iqs_aggregate import IqsChannelData as IqsChannelData
+from ._iqs_aggregate import IqsChannelHeader as IqsChannelHeader
+from ._transition_fit import FitComplex as FitComplex
+from ._transition_fit import TransitionFit as TransitionFit

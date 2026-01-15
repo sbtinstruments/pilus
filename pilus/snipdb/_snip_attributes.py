@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum, unique
-from typing import Any, ClassVar, Literal, Self, TypeVar, Union
+from typing import Any, ClassVar, Literal, Self, TypeVar
 
 from pydantic import Field, ValidationInfo, field_validator
 
@@ -97,5 +97,5 @@ class SnipEnum(FrozenModel):
 
 # [1] We use the `type_` field to disambiguate how pydantic parses the `Union`s.
 # See https://github.com/samuelcolvin/pydantic/issues/619
-SnipAttrDecl = Union[SnipIntDecl, SnipStrDecl, SnipEnumDecl]
-SnipAttr = Union[SnipInt, SnipStr, SnipEnum]
+SnipAttrDecl = SnipIntDecl | SnipStrDecl | SnipEnumDecl
+SnipAttr = SnipInt | SnipStr | SnipEnum

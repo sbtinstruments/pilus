@@ -9,7 +9,7 @@ class CombinerMap:
     """Container for combiners."""
 
     def __init__(self) -> None:
-        self._data: dict[TypeSet, Combiner] = dict()
+        self._data: dict[TypeSet, Combiner] = {}
 
     def get_combiners(
         self,
@@ -45,7 +45,8 @@ class CombinerMap:
     def add_combiner(self, combiner: Combiner) -> None:
         """Add the given combiner function to the global registry.
 
-        We automatically deduce the combined types from the function signature. Therefore,
+        We automatically deduce the combined types from the function signature.
+        Therefore,
         `func` must have a type annotation for all arguments.
         """
         arg_types = combiner.arg_types

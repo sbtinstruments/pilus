@@ -1,13 +1,12 @@
-from ._io_utilities import (
-    read_double,
-    read_exactly,
-    read_int,
-    read_string,
-    read_terminated_string,
-    seek,
-    tell,
-    write_exactly,
-    write_int,
-    write_terminated_string,
-)
-from ._signature import read_and_validate_signature, write_signature
+from ._io_utilities import read_double as read_double
+from ._io_utilities import read_exactly as read_exactly
+from ._io_utilities import read_int as read_int
+from ._io_utilities import read_string as read_string
+from ._io_utilities import read_terminated_string as read_terminated_string
+from ._io_utilities import seek as seek
+from ._io_utilities import tell as tell
+from ._io_utilities import write_exactly as write_exactly
+from ._io_utilities import write_int as write_int
+from ._io_utilities import write_terminated_string as write_terminated_string
+from ._signature import read_and_validate_signature as read_and_validate_signature
+from ._signature import write_signature as write_signature

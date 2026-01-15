@@ -17,11 +17,11 @@ PilusValidationError = ValidationError
 
 
 ### ORM/database-like errors
-class PilusNoResultFound(PilusBaseError):
+class PilusNoResultFound(PilusBaseError):  # noqa: N818
     """Did not find any results."""
 
 
-class PilusMultipleResultsFound(PilusBaseError):
+class PilusMultipleResultsFound(PilusBaseError):  # noqa: N818
     """Required a single result but found multiple."""
 
 

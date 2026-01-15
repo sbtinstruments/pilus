@@ -25,7 +25,7 @@ _RootType = dict[str, SnipAttrDecl]
 class SnipAttrDeclMap(RootModel, frozen=True):
     """Attribute declarations for snip."""
 
-    root: _RootType = dict()
+    root: _RootType = {}
 
     @property
     def enums(self) -> Iterable[tuple[str, SnipEnumDecl]]:
@@ -47,12 +47,12 @@ class SnipAttrDeclMap(RootModel, frozen=True):
             # Int
             if isinstance(declaration, SnipIntDecl):
                 if not isinstance(value, int):
-                    raise ValueError(f'The value "{value}" is not an integer')
+                    raise TypeError(f'The value "{value}" is not an integer')
                 yield (name, SnipInt(declaration=declaration, value=value))
             # Str
             elif isinstance(declaration, SnipStrDecl):
                 if not isinstance(value, str):
-                    raise ValueError(f'The value "{value}" is not a string')
+                    raise TypeError(f'The value "{value}" is not a string')
                 yield (name, SnipStr(declaration=declaration, value=value))
             # Enum
             elif isinstance(declaration, SnipEnumDecl):

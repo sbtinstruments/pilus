@@ -16,8 +16,7 @@ class ReadableChunk(Protocol):
     type_: ClassVar[bytes]
 
     @classmethod
-    def from_io(cls, io: BinaryIO, **kwargs: Any) -> ReadableChunk:
-        ...
+    def from_io(cls, io: BinaryIO, **kwargs: Any) -> ReadableChunk: ...
 
 
 class WritableChunk(Protocol):
@@ -25,8 +24,6 @@ class WritableChunk(Protocol):
 
     type_: ClassVar[bytes]
 
-    def to_io(self, io: BinaryIO) -> None:
-        ...
+    def to_io(self, io: BinaryIO) -> None: ...
 
-    def data_length(self) -> int:
-        ...
+    def data_length(self) -> int: ...

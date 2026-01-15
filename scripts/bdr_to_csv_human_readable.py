@@ -16,7 +16,15 @@ def process_file(file: Path):
         print(f"Skipping {file.name}")
         print(f"Reason: {str(exc)}")
 
-    output = {"site": [], "lf_amplitude": [], "hf_amplitude": [], "lf_amplitude_dB": [], "hf_amplitude_dB": [], "lf_phase_rad": [], "hf_phase_rad": [] }
+    output = {
+        "site": [],
+        "lf_amplitude": [],
+        "hf_amplitude": [],
+        "lf_amplitude_dB": [],
+        "hf_amplitude_dB": [],
+        "lf_phase_rad": [],
+        "hf_phase_rad": [],
+    }
     for site, bdr_channels in bdr_aggregate.sites.items():
         for name, bdr_channel in bdr_channels.items():
             for fit in bdr_channel.transition_fits:
@@ -26,11 +34,9 @@ def process_file(file: Path):
                     sqrt(fit.re.scale**2 + fit.im.scale**2)
                 )
                 output[name + "_amplitude_dB"].append(
-                    20*log10(sqrt(fit.re.scale**2 + fit.im.scale**2))
+                    20 * log10(sqrt(fit.re.scale**2 + fit.im.scale**2))
                 )
-                output[name + "_phase_rad"].append(
-                    atan2(fit.im.scale, fit.re.scale)
-                )
+                output[name + "_phase_rad"].append(atan2(fit.im.scale, fit.re.scale))
 
     OUTPUT_FILE = file.parent / (file.stem + ".csv")
     with open(OUTPUT_FILE, "w", newline="", encoding="utf-8") as file:
@@ -44,8 +50,11 @@ def process_file(file: Path):
             row = {key: value[i] for key, value in output.items()}
             writer.writerow(row)
 
+
 def main():
-    parser = argparse.ArgumentParser(description="Process .bdr files into amplitude CSVs.")
+    parser = argparse.ArgumentParser(
+        description="Process .bdr files into amplitude CSVs."
+    )
     parser.add_argument(
         "paths",
         nargs="*",
@@ -64,6 +73,7 @@ def main():
 
     for file in files:
         process_file(file)
+
 
 if __name__ == "__main__":
     main()

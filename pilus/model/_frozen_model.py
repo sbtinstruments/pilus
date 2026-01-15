@@ -10,7 +10,5 @@ Derived = TypeVar("Derived", bound="FrozenModel")
 
 class FrozenModel(BaseModel):
     model_config = ConfigDict(
-        frozen=True,
-        populate_by_name=True,
-        alias_generator=snake_to_lower_camel
+        frozen=True, populate_by_name=True, alias_generator=snake_to_lower_camel
     )

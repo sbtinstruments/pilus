@@ -3,14 +3,17 @@ from __future__ import annotations
 from pathlib import Path
 
 from cyto.model import FrozenModel
-from pydantic import Field
+from pydantic import ConfigDict, Field
+from pydantic.alias_generators import to_camel
 
 from ...forge import FORGE
 
 
 @FORGE.register_model("application/vnd.sbt.box.manifest+json")
-class Manifest(FrozenModel, extra="forbid"):
+class Manifest(FrozenModel):
     """Manifest for the box format."""
+
+    model_config = ConfigDict(alias_generator=to_camel)
 
     # TODO: Replace `dict` with `immutables.Map` when pydantic supports custom
     # data types.

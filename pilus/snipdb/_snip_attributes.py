@@ -4,7 +4,7 @@ from enum import Enum, unique
 from typing import Any, ClassVar, Literal, Self, TypeVar
 
 from cyto.model import FrozenModel
-from pydantic import Field, ValidationInfo, field_validator
+from pydantic import ConfigDict, Field, ValidationInfo, field_validator
 
 
 @unique
@@ -26,6 +26,9 @@ T = TypeVar("T", bound="SnipDeclBase")
 
 class SnipDeclBase(FrozenModel):
     """Base class for all snip attribute declarations."""
+
+    # In practice, allows the use of `type_` and `type` interchangeably.
+    model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
 
     declaration_type: ClassVar[_SnipAttrType]
 

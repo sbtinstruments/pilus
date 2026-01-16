@@ -103,7 +103,8 @@ class SnipAttrDeclMap(RootModel[_RootType], frozen=True):
                 case SnipEnumDecl():
                     if raw_value not in declaration.values:
                         raise ValueError(
-                            f'There is no value named "{raw_value}" in the "{name}" enum'
+                            f'There is no value named "{raw_value}" '
+                            f'in the "{name}" enum'
                         )
                     return (name, SnipEnum(declaration=declaration, value=raw_value))
         raise ValueError(f'Could not parse attribute: "{raw_attribute}"')

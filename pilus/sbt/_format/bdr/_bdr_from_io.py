@@ -31,18 +31,19 @@ def from_io(io: Annotated[BinaryIO, "application/vnd.sbt.bdr"]) -> BdrAggregate:
     )
     mutable_sites: dict[str, MutableSite] = {}
     for chunk in chunk_stream:
-        if isinstance(chunk, AhdrChunk):
-            if header.channel_names != chunk.channel_names:
-                raise PilusDeserializeError(
-                    "Channel names changed in the middle of the data stream"
-                )
-            # Remember the latest header
-            header = chunk
-        elif isinstance(chunk, TranChunk):
-            site = _chunks_to_site(ahdr=header, tran=chunk)
-            _add_to_sites(mutable_sites, header.site_name, site)
-        else:
-            raise TypeError(f"Unexpected chunk type: {type(chunk)!r}")
+        match chunk:
+            case AhdrChunk():
+                if header.channel_names != chunk.channel_names:
+                    raise PilusDeserializeError(
+                        "Channel names changed in the middle of the data stream"
+                    )
+                # Remember the latest header
+                header = chunk
+            case TranChunk():
+                site = _chunks_to_site(ahdr=header, tran=chunk)
+                _add_to_sites(mutable_sites, header.site_name, site)
+            case _:
+                raise TypeError(f"Unexpected chunk type: {type(chunk)!r}")
     # Freeze (and validate)
     try:
         sites = _freeze_sites(mutable_sites)

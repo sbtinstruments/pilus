@@ -24,19 +24,20 @@ def to_io(
     """
     write_signature(io, IQS_SIGNATURE)
     ihdr, idat = _aggregate_to_chunks(aggregate)
-    if version is IqsVersion.V2_0_0:
-        write_chunk(io, ihdr)
-        write_chunk(io, idat)
-    elif version is IqsVersion.V1_0_0:
-        if site_to_keep is None:
-            raise ValueError(
-                "You must specify `site_to_keep` when you target "
-                "version 1.0.0 of the IQS specification."
-            )
-        write_chunk(io, ShdrChunk.from_ihdr(ihdr, site_to_keep=site_to_keep))
-        write_chunk(io, SdatChunk.from_idat(idat, site_to_keep=site_to_keep))
-    else:
-        raise ValueError(f"Unsupported IQS version: {version}")
+    match version:
+        case IqsVersion.V2_0_0:
+            write_chunk(io, ihdr)
+            write_chunk(io, idat)
+        case IqsVersion.V1_0_0:
+            if site_to_keep is None:
+                raise ValueError(
+                    "You must specify `site_to_keep` when you target "
+                    "version 1.0.0 of the IQS specification."
+                )
+            write_chunk(io, ShdrChunk.from_ihdr(ihdr, site_to_keep=site_to_keep))
+            write_chunk(io, SdatChunk.from_idat(idat, site_to_keep=site_to_keep))
+        case _:
+            raise ValueError(f"Unsupported IQS version: {version}")
 
 
 def _aggregate_to_chunks(aggregate: IqsAggregate) -> tuple[IhdrChunk, IdatChunk]:

@@ -45,13 +45,14 @@ def detect_media_type(medium: RawMedium) -> str:
 
 @contextmanager
 def _as_binary_io(medium: RawMedium) -> Iterator[BinaryIO]:
-    if is_binary_io_like(medium):
-        yield cast(BinaryIO, medium)
-    elif isinstance(medium, PathLike):
-        with Path(medium).open("rb") as io:
-            yield io
-    elif isinstance(medium, bytes):
-        yield BytesIO(medium)
-    else:
-        # We cover all the cases of the `RawMedium` type
-        raise TypeError(f"Unsupported medium type: {type(medium)!r}")
+    match medium:
+        case _ if is_binary_io_like(medium):
+            yield cast(BinaryIO, medium)
+        case PathLike():
+            with Path(medium).open("rb") as io:
+                yield io
+        case bytes():
+            yield BytesIO(medium)
+        case _:
+            # We cover all the cases of the `RawMedium` type
+            raise TypeError(f"Unsupported medium type: {type(medium)!r}")

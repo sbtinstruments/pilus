@@ -44,23 +44,24 @@ class SnipAttrDeclMap(RootModel[_RootType], frozen=True):
                 declaration = self.root[name]
             except KeyError as exc:
                 raise ValueError(f'There is no attribute named "{name}"') from exc
-            # Int
-            if isinstance(declaration, SnipIntDecl):
-                if not isinstance(value, int):
-                    raise TypeError(f'The value "{value}" is not an integer')
-                yield (name, SnipInt(declaration=declaration, value=value))
-            # Str
-            elif isinstance(declaration, SnipStrDecl):
-                if not isinstance(value, str):
-                    raise TypeError(f'The value "{value}" is not a string')
-                yield (name, SnipStr(declaration=declaration, value=value))
-            # Enum
-            elif isinstance(declaration, SnipEnumDecl):
-                if value not in declaration.values:
-                    raise ValueError(
-                        f'There is no value named "{value}" in the "{name}" enum'
-                    )
-                yield (name, SnipEnum(declaration=declaration, value=value))
+            match declaration:
+                # Int
+                case SnipIntDecl():
+                    if not isinstance(value, int):
+                        raise TypeError(f'The value "{value}" is not an integer')
+                    yield (name, SnipInt(declaration=declaration, value=value))
+                # Str
+                case SnipStrDecl():
+                    if not isinstance(value, str):
+                        raise TypeError(f'The value "{value}" is not a string')
+                    yield (name, SnipStr(declaration=declaration, value=value))
+                # Enum
+                case SnipEnumDecl():
+                    if value not in declaration.values:
+                        raise ValueError(
+                            f'There is no value named "{value}" in the "{name}" enum'
+                        )
+                    yield (name, SnipEnum(declaration=declaration, value=value))
 
     def parse_raw_attributes(
         self, raw_attributes: Iterable[str]
@@ -88,19 +89,23 @@ class SnipAttrDeclMap(RootModel[_RootType], frozen=True):
                 declaration = self.root[name]
             except KeyError as exc:
                 raise ValueError(f'There is no attribute named "{name}"') from exc
-            # Int
-            if isinstance(declaration, SnipIntDecl):
-                return (name, SnipInt(declaration=declaration, value=int(raw_value)))
-            # Str
-            if isinstance(declaration, SnipStrDecl):
-                return (name, SnipStr(declaration=declaration, value=raw_value))
-            # Enum
-            if isinstance(declaration, SnipEnumDecl):
-                if raw_value not in declaration.values:
-                    raise ValueError(
-                        f'There is no value named "{raw_value}" in the "{name}" enum'
+            match declaration:
+                # Int
+                case SnipIntDecl():
+                    return (
+                        name,
+                        SnipInt(declaration=declaration, value=int(raw_value)),
                     )
-                return (name, SnipEnum(declaration=declaration, value=raw_value))
+                # Str
+                case SnipStrDecl():
+                    return (name, SnipStr(declaration=declaration, value=raw_value))
+                # Enum
+                case SnipEnumDecl():
+                    if raw_value not in declaration.values:
+                        raise ValueError(
+                            f'There is no value named "{raw_value}" in the "{name}" enum'
+                        )
+                    return (name, SnipEnum(declaration=declaration, value=raw_value))
         raise ValueError(f'Could not parse attribute: "{raw_attribute}"')
 
     def get_enum_from_value(self, value: str) -> tuple[str, SnipEnum] | None:

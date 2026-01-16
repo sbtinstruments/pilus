@@ -125,12 +125,13 @@ class Forge:
         first_arg_type = first_arg_annotations[0]
         media_type = first_arg_annotations[1]
         raw_type: RawMediumType
-        if issubclass(first_arg_type, BinaryIO):
-            raw_type = BinaryIO
-        elif issubclass(first_arg_type, PathLike):
-            raw_type = PathLike
-        else:
-            raise TypeError("Unsupported first argument type")
+        match first_arg_type:
+            case t if issubclass(t, BinaryIO):
+                raw_type = BinaryIO
+            case t if issubclass(t, PathLike):
+                raw_type = PathLike
+            case _:
+                raise TypeError("Unsupported first argument type")
         input_spec = MediumSpec(raw_type=raw_type, media_type=media_type)
         output_spec = type_hints["return"]
         morpher = Morpher(input=input_spec, output=output_spec, func=func)
@@ -150,12 +151,13 @@ class Forge:
         arg_raw_type = arg_annotations[1][0]
         output_media_type = arg_annotations[1][1]
         output_raw_type: RawMediumType
-        if issubclass(arg_raw_type, BinaryIO):
-            output_raw_type = BinaryIO
-        elif issubclass(arg_raw_type, PathLike):
-            output_raw_type = PathLike
-        else:
-            raise TypeError("Unsupported first argument type")
+        match arg_raw_type:
+            case t if issubclass(t, BinaryIO):
+                output_raw_type = BinaryIO
+            case t if issubclass(t, PathLike):
+                output_raw_type = PathLike
+            case _:
+                raise TypeError("Unsupported first argument type")
         output_spec = MediumSpec(raw_type=output_raw_type, media_type=output_media_type)
         morpher = Morpher(input=input_type, output=output_spec, func=func)
         self.add_morpher(morpher)
@@ -349,12 +351,13 @@ class Forge:
         it allows `Forge` itself to stay light on dependencies. Want more functionality?
         simply add it on top via `register_on_demand` (plug-in style).
         """
-        if isinstance(shape, Medium | MediumSpec):
-            shape_repr = shape.media_type
-        elif isinstance(shape, type):
-            shape_repr = repr(shape)
-        else:
-            shape_repr = repr(type(shape))
+        match shape:
+            case Medium() | MediumSpec():
+                shape_repr = shape.media_type
+            case type():
+                shape_repr = repr(shape)
+            case _:
+                shape_repr = repr(type(shape))
 
         try:
             # We use `pop` so that we avoid multiple calls to the registration
@@ -373,18 +376,17 @@ class Forge:
 
 
 def _maybe_enter(stack: ExitStack, obj: Any) -> Any:
-    # Special case for `pathlib.Path`: While technically a context manager (until
-    # python 3.13), the enter/exit logic is a no-op. It also emits a deprecation
-    # warning to enter/exit. Therefore, we do not add these objects to the stack.
-    #
-    # See: https://github.com/python/cpython/pull/30971
-    if isinstance(obj, Path):
-        return obj
-
-    # Otherwise, add all (sync) context managers to the stack.
-    if isinstance(obj, AbstractContextManager):
-        return stack.enter_context(obj)
-
-    # If we get this far, the object was not a context manager. We just return
-    # the object as is.
-    return obj
+    match obj:
+        # Special case for `pathlib.Path`: While technically a context manager (until
+        # python 3.13), the enter/exit logic is a no-op. It also emits a deprecation
+        # warning to enter/exit. Therefore, we do not add these objects to the stack.
+        #
+        # See: https://github.com/python/cpython/pull/30971
+        case Path():
+            return obj
+        # Otherwise, add all (sync) context managers to the stack.
+        case AbstractContextManager():
+            return stack.enter_context(obj)
+        # If we get this far, the object was not a context manager.
+        case _:
+            return obj

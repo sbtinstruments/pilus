@@ -1,6 +1,9 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["uv_build"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-root = ""
 
 [project]
 name = "pilus"
@@ -12,7 +15,7 @@ authors = [
 ]
 requires-python = ">=3.10,<4.0"
 dependencies = [
-    "cyto[model]",
+    "cyto[model] @ git+https://github.com/sbtinstruments/cyto@09fc2f8488316b80b7314af0ec2f1b7884abe283",
     "immutables>=0.20,<1",
     "pydantic>=2.9.2,<3",
     "tinydb>=4.4.0,<5",

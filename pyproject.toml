@@ -13,7 +13,7 @@ authors = [
     { name = "tvi", email = "tvi@sbtinstruments.com" },
     { name = "fpa", email = "fpa@sbtinstruments.com" },
 ]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.12,<4.0"
 dependencies = [
     "cyto[model] @ git+https://github.com/sbtinstruments/cyto@09fc2f8488316b80b7314af0ec2f1b7884abe283",
     "immutables>=0.20,<1",

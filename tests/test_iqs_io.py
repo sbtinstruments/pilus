@@ -1,21 +1,19 @@
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import polars as pl
 from pilus._magic import Medium
 from pilus.basic import Wave, lpcm_to_io
 from pilus.forge import FORGE
 from pilus.snipdb import SnipDb
-from pyfakefs.fake_filesystem import FakeFilesystem
 
-from ._assets import ASSETS_DIR
+from ._assets import PUBLIC_ASSETS_DIR
 
-IQS_FILE = ASSETS_DIR / Path("after2-measure-20191217-115350-0QX.iqs")
+_IQS_FILE = PUBLIC_ASSETS_DIR / "uncategorized/after2-measure-20191217-115350-0QX.iqs"
 
 
-def test_iqs_to_snipdb(fs: FakeFilesystem) -> None:
-    data_file = Path("data.iqs")
-    fs.add_real_file(IQS_FILE, target_path=data_file)
-    snip_db = SnipDb.from_file(data_file)
+def test_iqs_to_snipdb() -> None:
+    snip_db = SnipDb.from_file(_IQS_FILE)
 
     wave = snip_db.get_first(Wave)
     assert isinstance(wave, Wave)
@@ -23,16 +21,14 @@ def test_iqs_to_snipdb(fs: FakeFilesystem) -> None:
     wave = snip_db.get_one(Wave, site="site0", channel="hf", part="re")
     assert isinstance(wave, Wave)
 
-    wave_file = Path("data.wav")
-    with wave_file.open("wb") as io:
-        lpcm_to_io(wave.lpcm, io)
+    with TemporaryDirectory() as temp_dir:
+        wave_file = Path(temp_dir) / "data.wav"
+        with wave_file.open("wb") as io:
+            lpcm_to_io(wave.lpcm, io)
 
 
-def test_iqs_to_polars(fs: FakeFilesystem) -> None:
-    data_file = Path("data.iqs")
-    fs.add_real_file(IQS_FILE, target_path=data_file)
-
-    df = FORGE.deserialize(Medium.from_raw(data_file), pl.DataFrame)
+def test_iqs_to_polars() -> None:
+    df = FORGE.deserialize(Medium.from_raw(_IQS_FILE), pl.DataFrame)
 
     # Check the overall dimensionality and metadata
     assert set(df.columns) == {

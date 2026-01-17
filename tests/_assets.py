@@ -1,3 +1,5 @@
-from pathlib import Path
+from lago.low_level import setup_and_get_assets_dir
 
-ASSETS_DIR = Path.cwd() / "assets/uncategorized"
+PUBLIC_ASSETS_DIR = setup_and_get_assets_dir(
+    git_url="https://github.com/sbtinstruments/assets.git"
+)

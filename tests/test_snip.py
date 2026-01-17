@@ -8,7 +8,7 @@ from pilus.snipdb import SnipDb, SnipRow
 from pyfakefs.fake_filesystem import FakeFilesystem
 from tinydb import where
 
-from ._assets import ASSETS_DIR
+from ._assets import PUBLIC_ASSETS_DIR
 
 
 def test_snip(fs: FakeFilesystem) -> None:
@@ -61,24 +61,27 @@ def test_snip(fs: FakeFilesystem) -> None:
         "project.snip/data/part0--production--id=32--user=1000.extrema.json",
         contents="""[
             {
-                "timePoint": 123.000001,
+                "time_point": 123.000001,
                 "value": 42.1,
                 "type_": "maximum"
             },
             {
-                "timePoint": 143,
+                "time_point": 143,
                 "value": -8.8,
                 "type_": "minimum"
             }
         ]""",
     )
-    fs.add_real_file(ASSETS_DIR / "beat.wav", target_path="project.snip/data/part0.wav")
+    fs.add_real_file(
+        PUBLIC_ASSETS_DIR / "uncategorized/beat.wav",
+        target_path="project.snip/data/part0.wav",
+    )
     fs.create_file(
         "project.snip/data/part0.wave-meta.json",
         contents="""
             {
-                "startTime": 1231231231,
-                "maxAmplitude": 123
+                "start_time": 1231231231,
+                "max_amplitude": 123
             }
         """,
     )

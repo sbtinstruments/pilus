@@ -1,18 +1,17 @@
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from pilus._magic import Medium
 from pilus.forge import FORGE
 from pilus.sbt import BdrAggregate
-from pyfakefs.fake_filesystem import FakeFilesystem
 
-from ._assets import ASSETS_DIR
+from ._assets import PUBLIC_ASSETS_DIR
 
-BDR_FILE = ASSETS_DIR / Path("measure-bb2221028-A02.bdr")
+_BDR_FILE = PUBLIC_ASSETS_DIR / "uncategorized/measure-bb2221028-A02.bdr"
 
 
-def test_bdr_from_io(fs: FakeFilesystem) -> None:
-    fs.add_real_file(BDR_FILE, target_path="data.bdr")
-    data_file = Path("data.bdr")
+def test_bdr_from_io() -> None:
+    data_file = _BDR_FILE
 
     bdr_aggregate = BdrAggregate.from_file(data_file)
     assert bdr_aggregate is not None
@@ -21,7 +20,7 @@ def test_bdr_from_io(fs: FakeFilesystem) -> None:
         bdr_aggregate = BdrAggregate.from_io(io)
     assert bdr_aggregate is not None
 
-    # TODO: Replace with `to_file` from `ForgeIO` or similar
-    csv_file = Path("data.csv")
-    FORGE.serialize(bdr_aggregate, Medium.from_raw(csv_file))
-    # print(f"{csv_file.read_text()[:10000]=}")
+    with TemporaryDirectory() as temp_dir:
+        csv_file = Path(temp_dir) / " data.csv"
+        # TODO: Replace with `to_file` from `ForgeIO` or similar
+        FORGE.serialize(bdr_aggregate, Medium.from_raw(csv_file))

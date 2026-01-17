@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from io import BufferedIOBase, RawIOBase
 from os import PathLike
 from typing import Any, BinaryIO, get_args
 
@@ -16,8 +17,7 @@ def is_raw_medium(value: Any) -> bool:
 
 
 def is_binary_io_like(value: Any) -> bool:
-    # Obviously true for actual `BinaryIO` instances
-    if isinstance(value, BinaryIO):
+    if isinstance(value, BufferedIOBase | RawIOBase):
         return True
     # Stuff `pyfakefs.FakeFileWrapper` is close enough to actual `BinaryIO`
     # that we let it through here.

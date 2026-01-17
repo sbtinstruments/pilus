@@ -27,3 +27,4 @@ def register_pilus_basic(forge: Forge) -> None:
         raise NotImplementedError
     # Indirectly, the following `import` registers all morphers in the
     # global `FORGE` instance.
+    from ... import basic  # noqa: F401, PLC0415

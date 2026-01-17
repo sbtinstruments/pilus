@@ -376,14 +376,19 @@ class Forge:
 
 
 def _maybe_enter(stack: ExitStack, obj: Any) -> Any:
+    # Special case for `pathlib.Path`: While technically a context manager (until
+    # python 3.13), the enter/exit logic is a no-op. It also emits a deprecation
+    # warning to enter/exit. Therefore, we do not add these objects to the stack.
+    #
+    # See: https://github.com/python/cpython/pull/30971
+    #
+    # It's intentional that we do an `if isinstance` instead of `case Path()`.
+    # For some of the tests, we use pyfakefs that replaces the `Path` class with
+    # its own. The latter does _not_ work with pattern matching (raises `TypeError`).
+    if isinstance(obj, Path):
+        return obj
+
     match obj:
-        # Special case for `pathlib.Path`: While technically a context manager (until
-        # python 3.13), the enter/exit logic is a no-op. It also emits a deprecation
-        # warning to enter/exit. Therefore, we do not add these objects to the stack.
-        #
-        # See: https://github.com/python/cpython/pull/30971
-        case Path():
-            return obj
         # Otherwise, add all (sync) context managers to the stack.
         case AbstractContextManager():
             return stack.enter_context(obj)

@@ -3,8 +3,9 @@ from __future__ import annotations
 from enum import Enum, unique
 from typing import Any, ClassVar, Literal, Self, TypeVar
 
-from cyto.model import FrozenModel
 from pydantic import ConfigDict, Field, ValidationInfo, field_validator
+
+from cyto.model import FrozenModel
 
 
 @unique

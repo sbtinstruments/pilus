@@ -1,12 +1,13 @@
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+from pyfakefs.fake_filesystem import FakeFilesystem
+from tinydb import where
+
 from pilus._magic import Medium
 from pilus.basic import Lpcm, Wave, WaveMeta
 from pilus.sbt import Extrema, Extremum, ExtremumType
 from pilus.snipdb import SnipDb, SnipRow
-from pyfakefs.fake_filesystem import FakeFilesystem
-from tinydb import where
 
 from ._assets import PUBLIC_ASSETS_DIR
 

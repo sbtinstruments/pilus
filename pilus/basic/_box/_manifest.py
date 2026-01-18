@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from cyto.model import FrozenModel
 from pydantic import ConfigDict, Field
 from pydantic.alias_generators import to_camel
+
+from cyto.model import FrozenModel
 
 from ...forge import FORGE
 

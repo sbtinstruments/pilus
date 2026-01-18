@@ -3,6 +3,7 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 import pytest
+
 from pilus.sbt import IqsAggregate
 from pilus.sbt._format import iqs
 

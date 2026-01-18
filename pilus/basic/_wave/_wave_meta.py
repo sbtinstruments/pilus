@@ -1,5 +1,6 @@
-from cyto.model import FrozenModel
 from pydantic import AwareDatetime, PositiveInt
+
+from cyto.model import FrozenModel
 
 from ...forge import FORGE
 

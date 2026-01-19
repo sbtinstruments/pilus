@@ -39,3 +39,8 @@ dev = [
     "types-networkx<4.0,>=3.0",
     "ruff>=0.14.13",
 ]
+
+[tool.ruff.lint.isort]
+# Mark SBT-developed packages as first-party. This ensures that the import order
+# is the same whether pilus is in the monorepo or the public repo.
+known-first-party = ["cyto"]

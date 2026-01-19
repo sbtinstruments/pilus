@@ -38,6 +38,7 @@ dev = [
     "mypy>=1.10.1,<2",
     "types-networkx<4.0,>=3.0",
     "ruff>=0.14.13",
+    "lago @ git+https://github.com/sbtinstruments/lago@688a97d17825852792cf72e770d369dee312d2d1",
 ]
 
 [tool.ruff.lint.isort]

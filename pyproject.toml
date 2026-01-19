@@ -1,9 +1,6 @@
 [build-system]
-requires = ["uv_build"]
-build-backend = "uv_build"
-
-[tool.uv.build-backend]
-module-root = ""
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
 
 [project]
 name = "pilus"

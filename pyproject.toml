@@ -37,4 +37,5 @@ dev = [
     "pyfakefs>=5.6.0,<6",
     "mypy>=1.10.1,<2",
     "types-networkx<4.0,>=3.0",
+    "ruff>=0.14.13",
 ]

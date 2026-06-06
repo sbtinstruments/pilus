@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from enum import Enum, unique
+from enum import StrEnum, unique
 from typing import Any, ClassVar, Literal, Self, TypeVar
 
 from pydantic import ConfigDict, Field, ValidationInfo, field_validator
@@ -9,7 +9,7 @@ from cyto.model import FrozenModel
 
 
 @unique
-class _SnipAttrType(str, Enum):
+class _SnipAttrType(StrEnum):
     """Snip attributes can have these fundamental types."""
 
     INT = "int"

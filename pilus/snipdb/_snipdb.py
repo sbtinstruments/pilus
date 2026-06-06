@@ -131,13 +131,13 @@ class SnipDb(ForgeIO):
         return self._core.__iter__()
 
 
-def _row_to_type(row: SnipRow[T], type_: type[T | SnipRow[T]]) -> T | SnipRow[T]:
+def _row_to_type[T](row: SnipRow[T], type_: type[T | SnipRow[T]]) -> T | SnipRow[T]:
     if lenient_issubclass(type_, SnipRow):
         return row
     return row.content
 
 
-def _content_type(type_: type[T | SnipRow[T]]) -> type[T]:
+def _content_type[T](type_: type[T | SnipRow[T]]) -> type[T]:
     if lenient_issubclass(type_, SnipRow):
         assert issubclass(type_, SnipRow)
         content_field = type_.model_fields["content"]

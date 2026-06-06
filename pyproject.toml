@@ -97,6 +97,27 @@ lint.ignore = [
     # exception (including stack trace), respectively. We do *not* want to use
     # `exception` since it outputs both at the ERROR log level.
     "TRY400",
+    # redundant-literal-union (PYI051)
+    #
+    # We use this a lot like so:
+    #
+    #     model: Literal["haiku", "sonnet", "opus"] | str = "haiku"
+    #
+    # The `Literal` part may seem redundant at first. In theory it _is_ redundant.
+    # In practice, however, it offers us a nice development convenience: Our language
+    # server offers us the items in the `Literal` as _suggestions_. We like that.
+    # Also has runtime benefits, e.g., for pydantic where the literals become
+    # useful suggestions/examples in the CLI.
+    "PYI051",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/test_*.py" = [
+    # "PLR0913: Too many arguments in function definition (6 > 5)"
+    #
+    # Pytest does dependency injection via function args. It's common to have
+    # a lot of function arguments this way. Certainly a lot more than five!
+    "PLR0913",
 ]
 
 [tool.ruff.lint.isort]

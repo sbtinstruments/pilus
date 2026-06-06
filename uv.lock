@@ -88,7 +88,7 @@ wheels = [
 [[package]]
 name = "lago"
 version = "0.1.0"
-source = { git = "https://github.com/sbtinstruments/lago?rev=688a97d17825852792cf72e770d369dee312d2d1#688a97d17825852792cf72e770d369dee312d2d1" }
+source = { git = "https://github.com/sbtinstruments/lago?rev=4706eaefd763b25557567b17c40256cbd6a85f75#4706eaefd763b25557567b17c40256cbd6a85f75" }
 dependencies = [
     { name = "cyto", extra = ["model"] },
     { name = "filelock" },
@@ -363,7 +363,7 @@ provides-extras = ["cli", "polars"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "lago", git = "https://github.com/sbtinstruments/lago?rev=688a97d17825852792cf72e770d369dee312d2d1" },
+    { name = "lago", git = "https://github.com/sbtinstruments/lago?rev=4706eaefd763b25557567b17c40256cbd6a85f75" },
     { name = "mypy", specifier = ">=1.10.1,<2" },
     { name = "pyfakefs", specifier = ">=5.6.0,<6" },
     { name = "pytest", specifier = ">=8.2.2,<10" },
